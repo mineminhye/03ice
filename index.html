@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>얼음의 도시: 외심 방어 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -17,23 +17,13 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            width: 100vw;
             color: #f0f9ff;
-            touch-action: none;
-        }
-
-        /* 반응형 뷰포트 스케일링 컨테이너 */
-        #game-wrapper {
-            position: relative;
-            width: 1000px;
-            height: 600px;
-            transform-origin: center center;
-            flex-shrink: 0;
         }
 
         #app {
-            position: absolute;
-            inset: 0;
+            position: relative;
+            width: 1000px;
+            height: 600px;
             background: radial-gradient(circle at center, #0c4a6e 0%, #082f49 100%);
             border-radius: 32px;
             box-shadow: 0 0 60px rgba(56, 189, 248, 0.4);
@@ -70,13 +60,13 @@
             background: rgba(56, 189, 248, 0.2);
             border: 1px solid rgba(56, 189, 248, 0.5);
             backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
+            transition: all 0.3s;
             cursor: pointer;
         }
 
         .btn-ice:hover {
             background: rgba(56, 189, 248, 0.4);
-            transform: scale(1.03);
+            transform: scale(1.05);
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
         }
 
@@ -91,279 +81,100 @@
 </head>
 <body>
 
-    <div id="game-wrapper">
-        <div id="app">
-            <canvas id="snowCanvas" class="snow"></canvas>
+    <div id="app">
+        <canvas id="snowCanvas" class="snow"></canvas>
 
-            <!-- 1. 인트로 화면 -->
-            <div id="screen-intro" class="screen active bg-slate-900/70 backdrop-blur-md text-center">
-                <div class="mb-2 text-sky-400 font-bold tracking-widest uppercase text-sm font-black">Geometric Defense</div>
-                <h1 class="text-5xl font-black italic text-white mb-6 tracking-tighter neon-text">얼음의 도시:<br>외심 방어 시스템</h1>
-                
-                <div class="max-w-2xl bg-sky-950/50 p-6 rounded-[2.5rem] border border-sky-400/30 text-center mb-8 shadow-2xl">
-                    <p class="text-xl font-bold text-white mb-4 italic leading-snug">
-                        "원래 얼음의 도시는 서로 독립된 세 개의 마을이었습니다.<br>
-                        마물이 침공한 세 구역의 방어 시스템을 순서대로 복구해 주세요!"
-                    </p>
-                    <p class="text-sm leading-relaxed break-keep text-sky-100">
-                        각 마을의 초소 사이에 연결된 **흰색 가이드 라인**을 터치하여 수직이등분선을 만드세요.<br>
-                        모든 외심 보석이 깨어나 결계를 형성하면 마물들은 완벽히 정화됩니다.
-                    </p>
-                </div>
-
-                <div class="flex flex-col gap-4 w-full max-w-xs mx-auto">
-                    <!-- 시스템 기동 버튼 -->
-                    <button id="start-btn" class="btn-ice px-8 py-4 text-white rounded-2xl text-lg font-bold shadow-xl">
-                        🛡️ 외심 방어 기동하기
-                    </button>
-                    <!-- 뒤로가기 링크 -->
-                    <button onclick="goBackToMap()" class="text-sky-300 hover:text-sky-100 text-sm mt-1 transition underline underline-offset-4 pointer-events-auto">
-                        전체 지도로 돌아가기
-                    </button>
-                </div>
+        <!-- 1. 인트로 화면 -->
+        <div id="screen-intro" class="screen active bg-slate-900/70 backdrop-blur-md text-center">
+            <div class="mb-2 text-sky-400 font-bold tracking-widest uppercase text-sm">Stage 03</div>
+            <h1 class="text-5xl font-black italic text-white mb-8 tracking-tighter neon-text">얼음의 도시:<br>외심 방어 시스템</h1>
+            
+            <div class="max-w-2xl bg-sky-950/50 p-8 rounded-[2.5rem] border border-sky-400/30 text-center mb-10 shadow-2xl">
+                <p class="text-2xl font-bold text-white mb-6 italic leading-snug">
+                    "앗! 눈사람 마물이 나타났어!<br>
+                    어느 초소에서 출동해야 가장 효과적으로 방어할 수 있을까?"
+                </p>
+                <p class="text-lg leading-relaxed break-keep text-sky-100">
+                    초소 사이에 연결된 **흰색 가이드 라인**을 선택하여 수직이등분선을 만드세요.<br>
+                    외심 보석이 활성화되면 방어막이 완성되고 마물은 빛과 함께 사라집니다.<br>
+                    결계는 <span class="text-orange-400 font-bold">화면 전체를 분할</span>하며 도시를 영구히 보호합니다.
+                </p>
             </div>
 
-            <!-- 2. 게임 화면 -->
-            <div id="screen-game" class="screen p-0 overflow-hidden">
-                <canvas id="gameCanvas"></canvas>
+            <div class="flex flex-col gap-4 w-full max-w-xs mx-auto">
+                <button onclick="showScreen('game')" class="btn-ice px-8 py-5 text-white rounded-2xl text-xl font-bold shadow-xl">
+                    🛡️ 시스템 기동하기
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 게임 화면 -->
+        <div id="screen-game" class="screen p-0 overflow-hidden">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
+                <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md pointer-events-auto shadow-lg">
+                    <h2 class="text-sky-400 font-black text-lg mb-0.5 uppercase tracking-tighter text-balance">Geometric Defense</h2>
+                    <p class="text-[10px] text-sky-200/60">활성화된 보석: <span id="ui-count" class="text-white font-bold text-xs">0 / 0</span></p>
+                </div>
                 
-                <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md pointer-events-auto shadow-lg">
-                        <!-- 현재 레벨 정보 동적 출력 -->
-                        <h2 id="ui-level" class="text-sky-400 font-black text-lg mb-0.5 uppercase tracking-tighter">Level 1: 제1마을 (예각의 보루)</h2>
-                        <p class="text-[10px] text-sky-200/60">활성화된 보석: <span id="ui-count" class="text-white font-bold text-xs">0 / 0</span></p>
-                    </div>
-                    
+                <div class="flex gap-2 items-start">
                     <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md pointer-events-auto text-right shadow-lg">
                         <p class="text-[9px] font-bold text-sky-400 uppercase">Status</p>
-                        <!-- 동적 가이드 텍스트 출력 영역 -->
-                        <p id="ui-status" class="text-xs font-bold text-white italic text-balance">변을 터치하세요.</p>
+                        <p id="ui-status" class="text-xs font-bold text-white italic text-balance">가이드 라인을 클릭하세요.</p>
                     </div>
-                </div>
-
-                <!-- 전체 지도로 가기 버튼 상시 제공 -->
-                <div class="absolute bottom-4 left-4 pointer-events-auto">
-                    <button onclick="goBackToMap()" class="bg-slate-900/80 hover:bg-slate-800 text-sky-200 text-xs px-4 py-2.5 rounded-full border border-sky-500/30 transition shadow-xl">
-                        ⬅️ 전체 지도로 돌아가기
-                    </button>
-                </div>
-
-                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 px-8 py-3 rounded-full border border-sky-500/30 backdrop-blur-md pointer-events-auto text-center shadow-2xl">
-                    <p class="text-xs text-sky-100">
-                        <span class="text-sky-400 font-bold">Guide:</span> 수직이등분선의 교점(외심)을 정확히 포착하세요.
-                    </p>
+                    <button onclick="exitGame()" class="pointer-events-auto bg-slate-900/80 hover:bg-red-900/60 border border-sky-500/30 hover:border-red-400/50 backdrop-blur-md rounded-2xl w-12 h-12 flex items-center justify-center text-sky-300 hover:text-red-300 text-lg font-bold shadow-lg transition-all" title="나가기">✕</button>
                 </div>
             </div>
 
-            <!-- 3. 중간 레벨 클리어 모달 -->
-            <div id="levelClearModal" class="hidden fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-6 text-center">
-                <div class="bg-gradient-to-b from-sky-950/80 to-slate-950/90 p-8 rounded-[2.5rem] text-center max-w-sm shadow-2xl border border-sky-400/40">
-                    <div class="text-5xl mb-4">✨</div>
-                    <h2 id="level-clear-title" class="text-2xl font-black text-white mb-2 tracking-tighter">제1마을 정화 완료!</h2>
-                    <p class="text-sm text-sky-200 mb-6 leading-relaxed">수직이등분선 결계가 성공적으로 기동되었습니다.<br>이어서 다음 위협 구역을 정화하십시오.</p>
-                    <button onclick="nextLevel()" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                        다음 마을로 이동 🛡️
-                    </button>
-                </div>
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 px-8 py-3 rounded-full border border-sky-500/30 backdrop-blur-md pointer-events-auto text-center shadow-2xl">
+                <p class="text-xs text-sky-100">
+                    <span class="text-sky-400 font-bold">Guide:</span> 결계가 완성되면 마물은 정화되어 사라집니다.
+                </p>
             </div>
+        </div>
 
-            <!-- 4. 지혜의 석판 모달 -->
-            <div id="slateModal" class="hidden fixed inset-0 bg-slate-950/95 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-center">
-                <div class="bg-gradient-to-b from-indigo-950/80 to-slate-950/90 p-8 rounded-[2.5rem] text-center max-w-lg shadow-2xl border border-indigo-400/40 relative">
-                    <div class="text-5xl mb-4">📖</div>
-                    <h2 class="text-3xl font-black text-white mb-4 tracking-tighter text-indigo-200 font-black">삼각형 외심의 성질 정리</h2>
-                    
-                    <div class="text-left text-sm leading-relaxed text-slate-200 space-y-4 mb-8 bg-black/40 p-5 rounded-2xl border border-slate-700">
-                        <p>
-                            <span class="text-indigo-400 font-bold">1. 외심(Circumcenter)의 정의</span><br>
-                            삼각형의 세 변의 <span class="text-yellow-400 font-bold">수직이등분선</span>의 교점입니다.
-                        </p>
-                        <p>
-                            <span class="text-indigo-400 font-bold">2. 외심의 성질</span><br>
-                            삼각형의 외심에서 세 꼭짓점에 이르는 거리는 모두 같습니다.<br>
-                            이 성질을 이용하여 세 꼭짓점을 지나는 <span class="text-yellow-400 font-bold">외접원</span>을 그릴 수 있습니다.
-                        </p>
-                        <p class="text-slate-400 italic">
-                            * 예각삼각형의 외심은 삼각형의 내부에(Level 1), 직각삼각형의 외심은 빗변의 중점에(Level 2), 둔각삼각형의 외심은 삼각형의 외부에(Level 3) 존재합니다.
-                        </p>
-                    </div>
-
-                    <button id="close-slate-btn" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                        돌아가기
+        <!-- 3. 승리 모달 -->
+        <div id="victoryModal" class="hidden fixed inset-0 bg-sky-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-balance text-center">
+            <div class="bg-white/5 p-12 rounded-[3rem] text-center max-w-sm shadow-2xl border border-white/10">
+                <div class="text-6xl mb-6">❄️</div>
+                <h2 class="text-4xl font-black text-white mb-2 tracking-tighter neon-text">외접원의 방 도달</h2>
+                <p class="text-sm text-sky-200 mb-8 leading-relaxed italic">보로노이 방어 시스템이 완벽히 구축되었습니다.<br>도시를 분할하는 결계가 마물을 완전히 정화했습니다.</p>
+                <div class="flex flex-col gap-3">
+                    <button onclick="window.open('https://wontheworld.netlify.app', '_blank')" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
+                        🗺️ 모험의 지도 펼치기
                     </button>
-                </div>
-            </div>
-
-            <!-- 5. 최종 승리 모달 (게임 완료 화면) -->
-            <div id="victoryModal" class="hidden fixed inset-0 bg-sky-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-balance text-center">
-                <div class="bg-white/5 p-12 rounded-[3rem] text-center max-w-sm shadow-2xl border border-white/10">
-                    <div class="text-6xl mb-6">❄️</div>
-                    <h2 class="text-4xl font-black text-white mb-2 tracking-tighter neon-text">모든 마을 구출 완료</h2>
-                    <p class="text-sm text-sky-200 mb-10 leading-relaxed italic">보로노이 방어 시스템이 완벽히 구축되었습니다.<br>삼각형의 기하학적 원리가 도시를 안전하게 보호합니다.</p>
-                    
-                    <div class="flex flex-col gap-3">
-                        <!-- 석판의 지혜 읽기 (교수적 보상 배치) -->
-                        <button id="final-slate-btn" class="bg-indigo-950 hover:bg-indigo-900 border border-indigo-400/60 w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg transition">
-                            📖 석판의 지혜 읽기
-                        </button>
-                        <!-- 전체 지도로 돌아가기 -->
-                        <button onclick="goBackToMap()" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                            🗺️ 전체 지도로 돌아가기
-                        </button>
-                        <button onclick="location.reload()" class="text-slate-400 hover:text-white text-xs mt-2 transition">
-                            처음부터 다시 정화하기
-                        </button>
-                    </div>
+                    <button onclick="alert('📜 지혜의 석판은 곧 열립니다!\n다음 업데이트를 기다려 주세요.')" class="w-full py-4 text-white/40 rounded-2xl font-bold text-lg shadow-lg border border-white/10 cursor-not-allowed" style="background: rgba(255,255,255,0.03);">
+                        📜 지혜의 석판 보기
+                    </button>
+                    <button onclick="restartGame()" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
+                        🔄 게임 다시 하기
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // --- 순수 주파수 합성 사운드 엔진 (Web Audio API) ---
-        let audioCtx = null;
-
-        function initAudio() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-        }
-
-        function playSound(type) {
-            if (!audioCtx) return;
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            
-            const now = audioCtx.currentTime;
-            
-            if (type === 'click') {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(880, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.08);
-                gain.gain.setValueAtTime(0.08, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(now);
-                osc.stop(now + 0.12);
-            } else if (type === 'activate') {
-                const osc1 = audioCtx.createOscillator();
-                const gain1 = audioCtx.createGain();
-                osc1.type = 'triangle';
-                osc1.frequency.setValueAtTime(523.25, now);
-                osc1.frequency.exponentialRampToValueAtTime(1567.98, now + 0.3);
-                gain1.gain.setValueAtTime(0.15, now);
-                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-                osc1.connect(gain1);
-                gain1.connect(audioCtx.destination);
-                osc1.start(now);
-                osc1.stop(now + 0.4);
-
-                const osc2 = audioCtx.createOscillator();
-                const gain2 = audioCtx.createGain();
-                osc2.type = 'sine';
-                osc2.frequency.setValueAtTime(1046.50, now);
-                gain2.gain.setValueAtTime(0.08, now);
-                gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
-                osc2.connect(gain2);
-                gain2.connect(audioCtx.destination);
-                osc2.start(now);
-                osc2.stop(now + 0.25);
-            } else if (type === 'levelClear') {
-                const notes = [523.25, 659.25, 783.99, 1046.50];
-                notes.forEach((freq, index) => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, now + index * 0.08);
-                    gain.gain.setValueAtTime(0.1, now + index * 0.08);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + index * 0.08 + 0.3);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now + index * 0.08);
-                    osc.stop(now + index * 0.08 + 0.35);
-                });
-            } else if (type === 'victory') {
-                const notes = [523.25, 659.25, 783.99, 1046.50];
-                notes.forEach((freq, index) => {
-                    const osc = audioCtx.createOscillator();
-                    const gain = audioCtx.createGain();
-                    osc.type = 'sine';
-                    osc.frequency.setValueAtTime(freq, now + index * 0.12);
-                    gain.gain.setValueAtTime(0.12, now + index * 0.12);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
-                    osc.connect(gain);
-                    gain.connect(audioCtx.destination);
-                    osc.start(now + index * 0.12);
-                    osc.stop(now + 1.3);
-                });
-            }
-        }
-
-        function goBackToMap() {
-            window.location.href = '../index.html'; 
-        }
-
-        // --- 전역 상태 관리 및 설계 기하 격자망 구조 ---
-        let currentLevel = 1; // 1, 2, 3 단계 운용
+        // --- 전역 상태 관리 ---
+        let gameState = 'INTRO';
         let towers = [];
         let edges = []; 
         let triangles = []; 
         let monsters = [];
         let particles = [];
         let isGameOver = false;
-
-        const levelNames = [
-            "",
-            "Level 1: 제1마을 (예각의 보루)",
-            "Level 2: 제2마을 (직각의 결계)",
-            "Level 3: 제3마을 (둔각의 광장)"
-        ];
-
-        // Level 3 고정 설계용 격자 (이전 버전의 검증 완료된 둔각 포함 10개 좌표군)
-        const fixedTowersL3 = [
-            { id: 0, x: 150, y: 140 },
-            { id: 1, x: 420, y: 120 },
-            { id: 2, x: 680, y: 130 },
-            { id: 3, x: 880, y: 160 },
-            { id: 4, x: 260, y: 300 },
-            { id: 5, x: 500, y: 280 },
-            { id: 6, x: 740, y: 310 },
-            { id: 7, x: 160, y: 480 },
-            { id: 8, x: 440, y: 460 },
-            { id: 9, x: 840, y: 480 }
-        ];
-
-        const fixedTrianglesL3 = [
-            [0, 1, 4],
-            [1, 5, 4],
-            [1, 2, 5],
-            [2, 6, 5],
-            [2, 3, 6],
-            [4, 8, 5],
-            [4, 7, 8],
-            [5, 8, 6],
-            [6, 8, 9] // 둔각삼각형
-        ];
+        let gameLoopId = null;
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
+        // 좌표 정밀 보정
         function getMousePos(e) {
             const rect = canvas.getBoundingClientRect();
-            const scaleX = 1000 / rect.width;
-            const scaleY = 600 / rect.height;
-            
-            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
-            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
-            
-            return { 
-                x: (clientX - rect.left) * scaleX, 
-                y: (clientY - rect.top) * scaleY 
-            };
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
         }
 
         const getDist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)**2 + (y1-y2)**2);
@@ -374,38 +185,6 @@
             gameState = id.toUpperCase();
             if (id === 'game') initGame();
         }
-
-        function resizeGame() {
-            const wrapper = document.getElementById('game-wrapper');
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            
-            const ratioX = windowWidth / 1000;
-            const ratioY = windowHeight / 600;
-            const scale = Math.min(ratioX, ratioY, 1.2);
-            
-            wrapper.style.transform = `scale(${scale})`;
-        }
-        window.addEventListener('resize', resizeGame);
-        window.addEventListener('load', resizeGame);
-
-        // 첫 시작 이벤트 리스너
-        document.getElementById('start-btn').addEventListener('click', () => {
-            initAudio();
-            playSound('click');
-            showScreen('game');
-        });
-
-        // 지혜의 석판 모달 제어 (종료 화면에서 기동)
-        document.getElementById('final-slate-btn').addEventListener('click', () => {
-            playSound('click');
-            document.getElementById('slateModal').classList.remove('hidden');
-        });
-
-        document.getElementById('close-slate-btn').addEventListener('click', () => {
-            playSound('click');
-            document.getElementById('slateModal').classList.add('hidden');
-        });
 
         // --- 눈 배경 ---
         const snowCanvas = document.getElementById('snowCanvas');
@@ -427,70 +206,51 @@
             requestAnimationFrame(drawSnow);
         }
 
-        // --- 수학적 경계선 및 수직이등분선 판정 ---
-        function isBoundaryEdge(t1, t2) {
-            let count = 0;
-            triangles.forEach(tri => {
-                if (tri.tids.includes(t1) && tri.tids.includes(t2)) count++;
-            });
-            return count === 1; // 기하학적 수직 분할 외곽 경계 판정
-        }
-
         // --- 게임 엔진 ---
         function initGame() {
             canvas.width = 1000; canvas.height = 600;
-            edges = []; triangles = []; monsters = []; particles = [];
+            towers = []; edges = []; triangles = []; monsters = []; particles = [];
             isGameOver = false;
+            
+            // 육각형 격자 타워 배치
+            const rows = 3; const cols = 4; const spacingX = 220; const spacingY = 180;
+            const offsetX = 180; const offsetY = 140;
 
-            let levelTowers = [];
-            let levelTriangles = [];
-
-            // 레벨별 학습 특성 기반 노드 정밀 구성
-            if (currentLevel === 1) {
-                // 예각삼각형 1개 구성 (입문 단계)
-                levelTowers = [
-                    { id: 0, x: 250, y: 380 },
-                    { id: 1, x: 500, y: 180 },
-                    { id: 2, x: 750, y: 380 }
-                ];
-                levelTriangles = [[0, 1, 2]];
-            } else if (currentLevel === 2) {
-                // 직각삼각형 대칭 4개 격자 구성 (직각삼각형의 외심이 빗변의 중점에 놓이는 신비함 제시)
-                levelTowers = [
-                    { id: 0, x: 200, y: 150 },
-                    { id: 1, x: 500, y: 150 },
-                    { id: 2, x: 800, y: 150 },
-                    { id: 3, x: 200, y: 450 },
-                    { id: 4, x: 500, y: 450 },
-                    { id: 5, x: 800, y: 450 }
-                ];
-                levelTriangles = [
-                    [0, 1, 3],
-                    [1, 2, 5],
-                    [1, 3, 4],
-                    [1, 4, 5]
-                ];
-            } else if (currentLevel === 3) {
-                // 둔각과 예각, 직각이 조화된 9개 삼각형 전체 메쉬 (둔각 외심의 삼각형 외부 탈출 학습)
-                levelTowers = fixedTowersL3;
-                levelTriangles = fixedTrianglesL3;
+            let count = 0;
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    if(count >= 10) break;
+                    let x = offsetX + c * spacingX + (r % 2 === 1 ? spacingX / 2 : 0);
+                    let y = offsetY + r * spacingY;
+                    x += (Math.random() - 0.5) * 50; y += (Math.random() - 0.5) * 50;
+                    towers.push({ id: count++, x, y });
+                }
             }
 
-            towers = JSON.parse(JSON.stringify(levelTowers));
-
-            levelTriangles.forEach(tids => {
-                const t1 = towers[tids[0]], t2 = towers[tids[1]], t3 = towers[tids[2]];
-                const cc = getCircumcenter(t1, t2, t3);
-                triangles.push({
-                    tids: tids,
-                    x: cc.x,
-                    y: cc.y,
-                    revealed: false
-                });
-                addEdge(tids[0], tids[1]);
-                addEdge(tids[1], tids[2]);
-                addEdge(tids[2], tids[0]);
-            });
+            // 삼각형 생성 (Delaunay)
+            for (let i = 0; i < towers.length; i++) {
+                for (let j = i + 1; j < towers.length; j++) {
+                    for (let k = j + 1; k < towers.length; k++) {
+                        const t1 = towers[i], t2 = towers[j], t3 = towers[k];
+                        const cc = getCircumcenter(t1, t2, t3);
+                        if (cc && cc.x > 0 && cc.x < 1000 && cc.y > 0 && cc.y < 600) {
+                            const radius = getDist(cc.x, cc.y, t1.x, t1.y);
+                            let isDelaunay = true;
+                            for (let m = 0; m < towers.length; m++) {
+                                if (m !== i && m !== j && m !== k) {
+                                    if (getDist(cc.x, cc.y, towers[m].x, towers[m].y) < radius - 5) {
+                                        isDelaunay = false; break;
+                                    }
+                                }
+                            }
+                            if (isDelaunay) {
+                                triangles.push({ tids: [i, j, k], x: cc.x, y: cc.y, revealed: false });
+                                addEdge(i, j); addEdge(j, k); addEdge(k, i);
+                            }
+                        }
+                    }
+                }
+            }
 
             towers.forEach(t => {
                 monsters.push({
@@ -501,8 +261,7 @@
             });
 
             updateUI();
-            resizeGame();
-            requestAnimationFrame(render);
+            gameLoopId = requestAnimationFrame(render);
         }
 
         function addEdge(i, j) {
@@ -519,18 +278,17 @@
             return { x: ux, y: uy };
         }
 
-        canvas.onpointerdown = (e) => {
+        canvas.onclick = (e) => {
             if (isGameOver || gameState !== 'GAME') return;
             const pos = getMousePos(e);
 
-            // 외심 노드 선택 검사
             for (let tri of triangles) {
                 if (!tri.revealed) {
                     const activeCount = edges.filter(e => e.active && tri.tids.includes(e.t1) && tri.tids.includes(e.t2)).length;
-                    if (activeCount === 3 && getDist(pos.x, pos.y, tri.x, tri.y) < 65) {
+                    if (activeCount === 3 && getDist(pos.x, pos.y, tri.x, tri.y) < 60) {
                         tri.revealed = true;
                         purifyArea(tri);
-                        playSound('activate');
+                        document.getElementById('ui-status').innerText = "외심 보석 활성화! 구역이 정화됩니다.";
                         updateUI();
                         checkVictory();
                         return;
@@ -538,13 +296,10 @@
                 }
             }
 
-            // 가이드라인 변 클릭 검사
             for (let edge of edges) {
                 const t1 = towers[edge.t1], t2 = towers[edge.t2];
-                if (distToSegment(pos, t1, t2) < 22) {
+                if (distToSegment(pos, t1, t2) < 20) {
                     edge.active = !edge.active;
-                    playSound('click');
-                    updateUI();
                     return;
                 }
             }
@@ -575,53 +330,15 @@
         }
 
         function updateUI() {
-            document.getElementById('ui-level').innerText = levelNames[currentLevel];
-            
             const count = triangles.filter(t => t.revealed).length;
             document.getElementById('ui-count').innerText = `${count} / ${triangles.length}`;
-
-            let hasReadyTriangle = false;
-            triangles.forEach(tri => {
-                if (!tri.revealed) {
-                    const activeCount = edges.filter(e => e.active && tri.tids.includes(e.t1) && tri.tids.includes(e.t2)).length;
-                    if (activeCount === 3) {
-                        hasReadyTriangle = true;
-                    }
-                }
-            });
-
-            const statusEl = document.getElementById('ui-status');
-            if (hasReadyTriangle) {
-                statusEl.innerHTML = "<span class='text-yellow-400 font-bold animate-pulse'>🔵 외심을 터치하세요!</span>";
-            } else {
-                statusEl.innerHTML = "<span class='text-sky-300'>➖ 변을 터치하세요.</span>";
-            }
         }
 
         function checkVictory() {
             if (triangles.every(t => t.revealed)) {
                 isGameOver = true;
-                if (currentLevel < 3) {
-                    // 다음 스테이지 진행 유도
-                    playSound('levelClear');
-                    document.getElementById('level-clear-title').innerText = `${levelNames[currentLevel]} 정화 완료!`;
-                    setTimeout(() => {
-                        document.getElementById('levelClearModal').classList.remove('hidden');
-                    }, 2000);
-                } else {
-                    // 최종 보스 클리어 및 승리 선언
-                    playSound('victory');
-                    setTimeout(() => {
-                        document.getElementById('victoryModal').classList.remove('hidden');
-                    }, 2000);
-                }
+                setTimeout(() => document.getElementById('victoryModal').classList.remove('hidden'), 2500);
             }
-        }
-
-        function nextLevel() {
-            document.getElementById('levelClearModal').classList.add('hidden');
-            currentLevel++;
-            initGame();
         }
 
         function drawRook(x, y, color) {
@@ -639,7 +356,7 @@
             if (gameState !== 'GAME') return;
             ctx.clearRect(0, 0, 1000, 600);
 
-            // 1. 빛 입자
+            // 1. 빛 입자 (정화 효과)
             particles.forEach((p, index) => {
                 p.x += p.vx; p.y += p.vy; p.life -= 0.012;
                 if(p.life <= 0) { particles.splice(index, 1); return; }
@@ -662,11 +379,11 @@
                 }
             });
 
-            // 3. 마물 정화 애니메이션
+            // 3. 눈사람 정화 애니메이션
             monsters.forEach((m) => {
                 if (m.melting) {
                     m.alpha -= 0.012;
-                    m.size += 0.1;
+                    m.size += 0.1; // 정화 시 살짝 커지며 흐려짐
                 } else {
                     let nearestId = -1; let minDist = Infinity;
                     towers.forEach(t => { let d = getDist(m.x, m.y, t.x, t.y); if(d < minDist) { minDist = d; nearestId = t.id; }});
@@ -710,33 +427,44 @@
                 }
             });
 
-            // 5. 정밀 가로막는 무한/유한 결계선 연산 출력 루프
+            // 5. 무한 확장 결계 (오차 수정됨)
             triangles.forEach(tri => {
                 const activeCount = edges.filter(e => e.active && tri.tids.includes(e.t1) && tri.tids.includes(e.t2)).length;
-                
                 if (tri.revealed) {
-                    // (A) 외심 보석 렌더링
                     ctx.beginPath(); ctx.arc(tri.x, tri.y, 9, 0, Math.PI*2);
                     ctx.fillStyle = "#bae6fd"; ctx.shadowBlur = 25; ctx.shadowColor = "#38bdf8";
                     ctx.fill(); ctx.shadowBlur = 0;
 
-                    // (B) 3개의 변에 대한 정밀 수직이등분선 분기 출력
+                    triangles.forEach(other => {
+                        if (other.revealed && other !== tri) {
+                            const common = tri.tids.filter(id => other.tids.includes(id));
+                            if (common.length === 2) {
+                                ctx.beginPath(); ctx.moveTo(tri.x, tri.y); ctx.lineTo(other.x, other.y);
+                                ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 6; ctx.stroke();
+                            }
+                        }
+                    });
+
+                    // 화면 분할 무한 확장 (방향 보정 알고리즘 적용)
                     const triEdges = [[tri.tids[0], tri.tids[1]], [tri.tids[1], tri.tids[2]], [tri.tids[2], tri.tids[0]]];
+                    const centroidX = (towers[tri.tids[0]].x + towers[tri.tids[1]].x + towers[tri.tids[2]].x) / 3;
+                    const centroidY = (towers[tri.tids[0]].y + towers[tri.tids[1]].y + towers[tri.tids[2]].y) / 3;
+
                     triEdges.forEach(tp => {
-                        const t1 = towers[tp[0]], t2 = towers[tp[1]];
-                        const midX = (t1.x + t2.x) / 2, midY = (t1.y + t2.y) / 2;
-
-                        if (isBoundaryEdge(tp[0], tp[1])) {
-                            // 외각 경계선: 화면 외부로 무한 확장되는 주황색 광선 투사
-                            const centroidX = (towers[tri.tids[0]].x + towers[tri.tids[1]].x + towers[tri.tids[2]].x) / 3;
-                            const centroidY = (towers[tri.tids[0]].y + towers[tri.tids[1]].y + towers[tri.tids[2]].y) / 3;
-
+                        const isShared = triangles.some(other => other !== tri && other.revealed && tp.every(id => other.tids.includes(id)));
+                        if (!isShared) {
+                            const t1 = towers[tp[0]], t2 = towers[tp[1]];
+                            const midX = (t1.x + t2.x) / 2, midY = (t1.y + t2.y) / 2;
+                            
+                            // 광선의 기본 방향: (t2.x-t1.x, t2.y-t1.y)에 수직인 벡터
                             let rx = -(t2.y - t1.y);
                             let ry = (t2.x - t1.x);
 
+                            // 무게중심에서 중점을 향하는 벡터가 '바깥쪽'임
                             const outX = midX - centroidX;
                             const outY = midY - centroidY;
 
+                            // 수직 벡터가 바깥쪽을 향하도록 내적(dot product)으로 확인 후 반전
                             if (rx * outX + ry * outY < 0) {
                                 rx = -rx;
                                 ry = -ry;
@@ -749,35 +477,11 @@
                             ctx.strokeStyle = "rgba(251, 146, 60, 0.9)";
                             ctx.lineWidth = 5;
                             ctx.stroke();
-
-                            // 보석 연결점
+                            
                             ctx.beginPath(); ctx.arc(tri.x, tri.y, 4, 0, Math.PI*2); ctx.fillStyle = "#fb923c"; ctx.fill();
-                        } else {
-                            // 내부 공유선
-                            const other = triangles.find(o => o !== tri && tp.every(id => o.tids.includes(id)));
-                            if (other && other.revealed) {
-                                // 인접한 두 외심이 모두 정화되었을 때: 완벽히 이어진 견고한 푸른색 경계 결계 수립
-                                ctx.beginPath();
-                                ctx.moveTo(tri.x, tri.y);
-                                ctx.lineTo(other.x, other.y);
-                                ctx.strokeStyle = "#38bdf8";
-                                ctx.lineWidth = 6;
-                                ctx.stroke();
-                            } else {
-                                // 한쪽만 정화되었을 때: 변의 중점(M)까지만 정확히 이어지는 주황색 점선 가이드
-                                ctx.beginPath();
-                                ctx.moveTo(midX, midY);
-                                ctx.lineTo(tri.x, tri.y);
-                                ctx.strokeStyle = "rgba(251, 146, 60, 0.75)";
-                                ctx.setLineDash([6, 6]);
-                                ctx.lineWidth = 3;
-                                ctx.stroke();
-                                ctx.setLineDash([]);
-                            }
                         }
                     });
                 } else if (activeCount === 3) {
-                    // 수직이등분 활성화 시 영롱한 대기 펄스 애니메이션
                     const pulse = 24 + Math.sin(Date.now()/100)*12;
                     ctx.beginPath(); ctx.arc(tri.x, tri.y, pulse, 0, Math.PI*2);
                     ctx.fillStyle = "rgba(255, 255, 255, 0.4)"; ctx.fill();
@@ -786,7 +490,24 @@
             });
 
             towers.forEach(t => drawRook(t.x, t.y, "#1e293b"));
-            requestAnimationFrame(render);
+            gameLoopId = requestAnimationFrame(render);
+        }
+
+        function restartGame() {
+            document.getElementById('victoryModal').classList.add('hidden');
+            if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
+            initGame();
+        }
+
+        function exitGame() {
+            if (confirm('게임을 종료하고 인트로로 돌아갈까요?')) {
+                if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
+                isGameOver = true;
+                gameState = 'INTRO';
+                document.getElementById('victoryModal').classList.add('hidden');
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('screen-intro').classList.add('active');
+            }
         }
 
         window.onload = () => { initSnow(); drawSnow(); };
