@@ -1,516 +1,1051 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>얼음의 도시: 외심 방어 시스템</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap');
-        
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #020617;
-            margin: 0;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: #f0f9ff;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>얼음의 도시: 외심과 내심 방어 시스템</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap');
 
-        #app {
-            position: relative;
-            width: 1000px;
-            height: 600px;
-            background: radial-gradient(circle at center, #0c4a6e 0%, #082f49 100%);
-            border-radius: 32px;
-            box-shadow: 0 0 60px rgba(56, 189, 248, 0.4);
-            overflow: hidden;
-            border: 2px solid rgba(56, 189, 248, 0.3);
-        }
+:root{
+  --ice:#38bdf8; --ice-l:#bae6fd; --gold:#fb923c; --deep:#020617;
+}
+*{ box-sizing:border-box; }
+body{
+  font-family:'Jua','Noto Sans KR',sans-serif;
+  background:var(--deep); margin:0; overflow:hidden;
+  display:flex; justify-content:center; align-items:center;
+  height:100vh; color:#f0f9ff;
+}
+#app{
+  position:relative; width:1000px; height:600px;
+  background:radial-gradient(circle at center,#0c4a6e 0%,#082f49 100%);
+  border-radius:32px; box-shadow:0 0 60px rgba(56,189,248,.4);
+  overflow:hidden; border:2px solid rgba(56,189,248,.3);
+}
+.screen{ position:absolute; inset:0; display:none; flex-direction:column;
+  align-items:center; justify-content:center; z-index:20; padding:1.5rem; }
+.screen.active{ display:flex; }
+canvas{ display:block; width:100%; height:100%; background:transparent; touch-action:none; }
+.neon-text{ text-shadow:0 0 10px rgba(56,189,248,.8),0 0 20px rgba(56,189,248,.5); }
+.gold-text{ text-shadow:0 0 10px rgba(251,146,60,.85),0 0 22px rgba(251,146,60,.5); }
 
-        .screen {
-            position: absolute;
-            inset: 0;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 20;
-            padding: 1.5rem;
-        }
+.btn-ice{
+  background:rgba(56,189,248,.2); border:1px solid rgba(56,189,248,.55);
+  backdrop-filter:blur(10px); transition:all .25s; cursor:pointer;
+  font-family:'Jua',sans-serif;
+}
+.btn-ice:hover{ background:rgba(56,189,248,.4); transform:scale(1.05);
+  box-shadow:0 0 22px rgba(56,189,248,.45); }
+.btn-gold{
+  background:rgba(251,146,60,.25); border:1px solid rgba(251,146,60,.6);
+  backdrop-filter:blur(10px); transition:all .25s; cursor:pointer;
+  font-family:'Jua',sans-serif;
+}
+.btn-gold:hover{ background:rgba(251,146,60,.45); transform:scale(1.05);
+  box-shadow:0 0 22px rgba(251,146,60,.5); }
 
-        .screen.active { display: flex; }
+.snow{ position:absolute; width:100%; height:100%; pointer-events:none; z-index:5; }
 
-        canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            background-color: transparent;
-            touch-action: none;
-        }
+/* 토스트 */
+#toast{
+  position:absolute; bottom:64px; left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:rgba(2,6,23,.6); border:1.5px solid rgba(56,189,248,.5);
+  color:rgba(224,242,254,.95); padding:12px 30px; border-radius:999px;
+  font-size:19px; font-weight:400; pointer-events:none; z-index:100;
+  opacity:0; transition:opacity .4s,transform .4s; white-space:nowrap;
+  box-shadow:0 0 18px rgba(56,189,248,.2); backdrop-filter:blur(6px);
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.pulse{ animation:toastPulse .45s ease-in-out; }
+@keyframes toastPulse{
+  0%{opacity:.4;transform:translateX(-50%) scale(.97);}
+  50%{opacity:1;transform:translateX(-50%) scale(1.05);}
+  100%{opacity:1;transform:translateX(-50%) scale(1);}
+}
 
-        .neon-text {
-            text-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(56, 189, 248, 0.5);
-        }
+/* 상단 안내 배너 (문제 단계) */
+#topbanner{
+  position:absolute; top:16px; left:50%; transform:translateX(-50%);
+  z-index:30; text-align:center; pointer-events:none;
+  background:rgba(2,6,23,.55); border:1.5px solid rgba(56,189,248,.35);
+  border-radius:22px; padding:9px 30px; backdrop-filter:blur(8px);
+  max-width:900px; width:max-content; display:none;
+}
+#topbanner .tag{ font-size:15px; color:var(--gold); letter-spacing:.06em; }
+#topbanner .msg{ font-size:22px; color:#fff; margin-top:2px; line-height:1.25; }
 
-        .btn-ice {
-            background: rgba(56, 189, 248, 0.2);
-            border: 1px solid rgba(56, 189, 248, 0.5);
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-            cursor: pointer;
-        }
+/* 하단 액션 버튼 (다음 문제 등) */
+#actionBtn{
+  position:absolute; bottom:22px; left:50%; transform:translateX(-50%);
+  z-index:40; display:none; padding:14px 46px; border-radius:18px;
+  font-size:22px; color:#fff; box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
 
-        .btn-ice:hover {
-            background: rgba(56, 189, 248, 0.4);
-            transform: scale(1.05);
-            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
-        }
+/* 작도 방법 선택 패널 */
+#choicePanel{
+  position:absolute; bottom:20px; left:50%; transform:translateX(-50%);
+  z-index:45; display:none; flex-direction:column; align-items:center; gap:10px;
+}
+#choicePanel .cp-q{
+  font-family:'Jua',sans-serif; font-size:22px; color:#e0f2fe;
+  background:rgba(2,6,23,.6); border:1.5px solid rgba(56,189,248,.4);
+  padding:7px 24px; border-radius:999px; backdrop-filter:blur(6px);
+}
+#choicePanel .cp-btns{ display:flex; gap:18px; }
+#choicePanel .cp-btn{
+  font-family:'Jua',sans-serif; font-size:26px; line-height:1.2; color:#fff;
+  padding:16px 30px; border-radius:20px; cursor:pointer; min-width:230px;
+  background:rgba(30,58,138,.55); border:2px solid rgba(56,189,248,.55);
+  backdrop-filter:blur(8px); transition:all .2s; box-shadow:0 6px 24px rgba(0,0,0,.4);
+}
+#choicePanel .cp-btn:hover{ background:rgba(37,99,235,.7); transform:translateY(-3px) scale(1.03);
+  box-shadow:0 0 26px rgba(56,189,248,.55); }
+#choicePanel .cp-btn small{ display:block; font-size:15px; color:#bae6fd; margin-top:4px; }
 
-        .snow {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 5;
-        }
-    </style>
+/* 팝업(다음으로 / 스토리) */
+.overlay{
+  position:absolute; inset:0; z-index:60; display:none;
+  align-items:center; justify-content:center; padding:1.5rem;
+  background:rgba(2,6,23,.72); backdrop-filter:blur(10px);
+}
+.overlay.active{ display:flex; }
+.card{
+  background:rgba(8,47,73,.65); border:1px solid rgba(56,189,248,.35);
+  border-radius:34px; padding:44px 40px; max-width:640px; text-align:center;
+  box-shadow:0 0 50px rgba(56,189,248,.3);
+}
+.card h2{ font-size:38px; color:#fff; margin:0 0 14px; }
+.card p{ font-size:21px; line-height:1.55; color:#e0f2fe; margin:0 0 26px; word-break:keep-all; }
+</style>
 </head>
 <body>
+<div id="app">
+  <canvas id="snowCanvas" class="snow"></canvas>
 
-    <div id="app">
-        <canvas id="snowCanvas" class="snow"></canvas>
+  <!-- 1. 인트로 -->
+  <div id="screen-intro" class="screen active bg-slate-900/70 backdrop-blur-md text-center">
+    <div class="mb-2 text-sky-400 tracking-widest uppercase text-lg">Stage 03</div>
+    <h1 class="text-5xl text-white mb-6 tracking-tight neon-text leading-tight">얼음의 도시<br><span class="text-3xl text-sky-200">외심과 내심의 방어 시스템</span></h1>
 
-        <!-- 1. 인트로 화면 -->
-        <div id="screen-intro" class="screen active bg-slate-900/70 backdrop-blur-md text-center">
-            <div class="mb-2 text-sky-400 font-bold tracking-widest uppercase text-sm">Stage 03</div>
-            <h1 class="text-5xl font-black italic text-white mb-8 tracking-tighter neon-text">얼음의 도시:<br>외심 방어 시스템</h1>
-            
-            <div class="max-w-2xl bg-sky-950/50 p-8 rounded-[2.5rem] border border-sky-400/30 text-center mb-10 shadow-2xl">
-                <p class="text-2xl font-bold text-white mb-6 italic leading-snug">
-                    "앗! 눈사람 마물이 나타났어!<br>
-                    어느 초소에서 출동해야 가장 효과적으로 방어할 수 있을까?"
-                </p>
-                <p class="text-lg leading-relaxed break-keep text-sky-100">
-                    초소 사이에 연결된 **흰색 가이드 라인**을 선택하여 수직이등분선을 만드세요.<br>
-                    외심 보석이 활성화되면 방어막이 완성되고 마물은 빛과 함께 사라집니다.<br>
-                    결계는 <span class="text-orange-400 font-bold">화면 전체를 분할</span>하며 도시를 영구히 보호합니다.
-                </p>
-            </div>
-
-            <div class="flex flex-col gap-4 w-full max-w-xs mx-auto">
-                <button onclick="showScreen('game')" class="btn-ice px-8 py-5 text-white rounded-2xl text-xl font-bold shadow-xl">
-                    🛡️ 시스템 기동하기
-                </button>
-            </div>
-        </div>
-
-        <!-- 2. 게임 화면 -->
-        <div id="screen-game" class="screen p-0 overflow-hidden">
-            <canvas id="gameCanvas"></canvas>
-            
-            <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none">
-                <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md pointer-events-auto shadow-lg">
-                    <h2 class="text-sky-400 font-black text-lg mb-0.5 uppercase tracking-tighter text-balance">Geometric Defense</h2>
-                    <p class="text-[10px] text-sky-200/60">활성화된 보석: <span id="ui-count" class="text-white font-bold text-xs">0 / 0</span></p>
-                </div>
-                
-                <div class="flex gap-2 items-start">
-                    <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md pointer-events-auto text-right shadow-lg">
-                        <p class="text-[9px] font-bold text-sky-400 uppercase">Status</p>
-                        <p id="ui-status" class="text-xs font-bold text-white italic text-balance">가이드 라인을 클릭하세요.</p>
-                    </div>
-                    <button onclick="exitGame()" class="pointer-events-auto bg-slate-900/80 hover:bg-red-900/60 border border-sky-500/30 hover:border-red-400/50 backdrop-blur-md rounded-2xl w-12 h-12 flex items-center justify-center text-sky-300 hover:text-red-300 text-lg font-bold shadow-lg transition-all" title="나가기">✕</button>
-                </div>
-            </div>
-
-            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-slate-900/90 px-8 py-3 rounded-full border border-sky-500/30 backdrop-blur-md pointer-events-auto text-center shadow-2xl">
-                <p class="text-xs text-sky-100">
-                    <span class="text-sky-400 font-bold">Guide:</span> 결계가 완성되면 마물은 정화되어 사라집니다.
-                </p>
-            </div>
-        </div>
-
-        <!-- 3. 승리 모달 -->
-        <div id="victoryModal" class="hidden fixed inset-0 bg-sky-950/90 backdrop-blur-xl z-50 flex items-center justify-center p-6 text-balance text-center">
-            <div class="bg-white/5 p-12 rounded-[3rem] text-center max-w-sm shadow-2xl border border-white/10">
-                <div class="text-6xl mb-6">❄️</div>
-                <h2 class="text-4xl font-black text-white mb-2 tracking-tighter neon-text">외접원의 방 도달</h2>
-                <p class="text-sm text-sky-200 mb-8 leading-relaxed italic">보로노이 방어 시스템이 완벽히 구축되었습니다.<br>도시를 분할하는 결계가 마물을 완전히 정화했습니다.</p>
-                <div class="flex flex-col gap-3">
-                    <button onclick="window.open('https://wontheworld.netlify.app', '_blank')" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                        🗺️ 모험의 지도 펼치기
-                    </button>
-                    <button onclick="window.open('https://youtu.be/ccne35j_cBw', '_blank')" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                        📜 지혜의 석판 보기
-                    </button>
-                    <button onclick="restartGame()" class="btn-ice w-full py-4 text-white rounded-2xl font-bold text-lg shadow-lg">
-                        🔄 게임 다시 하기
-                    </button>
-                </div>
-            </div>
-        </div>
+    <div class="max-w-2xl bg-sky-950/50 p-8 rounded-[2.2rem] border border-sky-400/30 text-center mb-8 shadow-2xl">
+      <p class="text-2xl text-white mb-5 leading-snug">
+        "눈사람 마물이 도시를 덮쳤다!<br>그런데 <span class="text-sky-300">어느 방어탑도 출동하지 않았다.</span>"
+      </p>
+      <p class="text-xl leading-relaxed break-keep text-sky-100">
+        어느 탑이 가장 가까운지 <span class="text-sky-300">아무도 몰랐기 때문</span>이다.<br>
+        지혜로운 용사인 당신은 각 탑이 책임질 구역을 나누는<br>
+        <span class="text-orange-300">방어선(보로노이)</span>을 직접 구축하기로 한다.
+      </p>
     </div>
 
-    <script>
-        // --- 전역 상태 관리 ---
-        let gameState = 'INTRO';
-        let towers = [];
-        let edges = []; 
-        let triangles = []; 
-        let monsters = [];
-        let particles = [];
-        let isGameOver = false;
-        let gameLoopId = null;
+    <button onclick="startVoronoi()" class="btn-ice px-10 py-5 text-white rounded-2xl text-2xl shadow-xl">
+      🛡️ 방어선 구축 시작
+    </button>
+  </div>
 
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
+  <!-- 2. 게임 화면(보로노이 + 문제 공용 캔버스) -->
+  <div id="screen-game" class="screen p-0 overflow-hidden">
+    <canvas id="gameCanvas"></canvas>
 
-        // 좌표 정밀 보정
-        function getMousePos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+    <!-- 좌상단 HUD -->
+    <div class="absolute top-4 left-4 flex gap-2 items-start pointer-events-none z-20">
+      <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md shadow-lg">
+        <h2 id="hud-title" class="text-sky-400 text-xl mb-0.5 tracking-tight">GEOMETRIC DEFENSE</h2>
+        <p class="text-sm text-sky-200/70">진행: <span id="hud-progress" class="text-white">0 / 0</span></p>
+      </div>
+    </div>
+    <!-- 우상단 상태 + 나가기 -->
+    <div class="absolute top-4 right-4 flex gap-2 items-start z-20">
+      <div class="bg-slate-900/80 p-4 rounded-2xl border border-sky-500/30 backdrop-blur-md text-right shadow-lg pointer-events-none max-w-[260px]">
+        <p class="text-xs text-sky-400 uppercase">Status</p>
+        <p id="hud-status" class="text-lg text-white leading-tight">변을 눌러 수직이등분선을 작도하세요.</p>
+      </div>
+      <button onclick="exitGame()" class="bg-slate-900/80 hover:bg-red-900/60 border border-sky-500/30 hover:border-red-400/50 backdrop-blur-md rounded-2xl w-12 h-12 flex items-center justify-center text-sky-300 hover:text-red-300 text-xl shadow-lg transition-all" title="나가기">✕</button>
+    </div>
+
+    <div id="topbanner"><div class="tag"></div><div class="msg"></div></div>
+    <button id="actionBtn" class="btn-gold"></button>
+
+    <!-- 작도 방법 선택 -->
+    <div id="choicePanel">
+      <div class="cp-q">어떤 작도로 자리를 정할까요?</div>
+      <div class="cp-btns">
+        <button class="cp-btn" onclick="chooseMethod('perp')">변의 수직이등분선<small>각 변을 수직으로 이등분</small></button>
+        <button class="cp-btn" onclick="chooseMethod('angle')">각의 이등분선<small>각 꼭짓점의 각을 이등분</small></button>
+      </div>
+    </div>
+
+    <!-- 다음으로 팝업 -->
+    <div id="nextPopup" class="overlay">
+      <div class="card">
+        <div class="text-6xl mb-4">🛡️❄️</div>
+        <h2 class="neon-text">방어선 완성!</h2>
+        <p>도시를 나누는 보로노이 결계가 세워졌다.<br>
+        각 구역에 <span class="text-orange-300">포위된 마물</span>은 담당 방어탑에 정화되었다.<br>
+        그런데 평화가 찾아오자, 마을에는 새로운 고민이 생겼는데…</p>
+        <button onclick="startProblems()" class="btn-gold px-10 py-4 rounded-2xl text-2xl text-white">다음으로 ▶</button>
+      </div>
+    </div>
+
+    <!-- 문제 사이 스토리 팝업 -->
+    <div id="storyPopup" class="overlay">
+      <div class="card">
+        <div id="story-emoji" class="text-6xl mb-4">📜</div>
+        <h2 id="story-title" class="neon-text"></h2>
+        <p id="story-text"></p>
+        <button id="story-btn" class="btn-gold px-10 py-4 rounded-2xl text-2xl text-white"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 최종 승리 -->
+  <div id="victoryModal" class="overlay">
+    <div class="card">
+      <div class="text-6xl mb-4">👑❄️</div>
+      <h2 class="neon-text">얼음의 도시, 평화 회복!</h2>
+      <p>외심으로 <span class="text-sky-300">공평한 우물</span>을, 내심으로 <span class="text-orange-300">주차장과 염소 우리</span>를 완성했다.<br>
+      외심은 <b>세 꼭짓점에서 같은 거리</b>, 내심은 <b>세 변에서 같은 거리</b>. 도시는 지혜로 지켜졌다.</p>
+      <div class="flex flex-col gap-3">
+        <button onclick="window.open('https://wontheworld.netlify.app','_blank')" class="btn-ice w-full py-4 rounded-2xl text-xl text-white">🗺️ 모험의 지도 펼치기</button>
+        <button onclick="window.open('https://youtu.be/ccne35j_cBw','_blank')" class="btn-ice w-full py-4 rounded-2xl text-xl text-white">📜 지혜의 석판 보기</button>
+        <button onclick="restartAll()" class="btn-ice w-full py-4 rounded-2xl text-xl text-white">🔄 처음부터 다시</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ===================== 공통 ===================== */
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+let phase='intro';        // 'intro' | 'voronoi' | 'problem'
+let loopId=null;
+let particles=[];
+const dist=(x1,y1,x2,y2)=>Math.hypot(x1-x2,y1-y2);
+
+function mouse(e){
+  const r=canvas.getBoundingClientRect();
+  return { x:(e.clientX-r.left)*(canvas.width/r.width),
+           y:(e.clientY-r.top)*(canvas.height/r.height) };
+}
+function setTitle(t){ document.getElementById('hud-title').innerText=t; }
+function setProgress(t){ document.getElementById('hud-progress').innerText=t; }
+function setStatus(t){ document.getElementById('hud-status').innerText=t; }
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+id).classList.add('active');
+}
+
+/* ===================== 음성 (Web Speech API) ===================== */
+let koVoice=null;
+function pickVoice(){
+  if(!('speechSynthesis' in window))return;
+  const vs=speechSynthesis.getVoices();
+  koVoice=vs.find(v=>v.lang&&v.lang.toLowerCase().startsWith('ko'))||null;
+}
+if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged=pickVoice; }
+function speak(text, onEnd){
+  const supported = ('speechSynthesis' in window);
+  let done=false;
+  const finish=()=>{ if(done)return; done=true; if(onEnd)onEnd(); };
+  if(!supported){                       // 음성 미지원: 읽을 시간만큼 대기 후 콜백
+    if(onEnd) setTimeout(finish, 1500 + text.length*95);
+    return;
+  }
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang='ko-KR'; if(koVoice)u.voice=koVoice; u.rate=1.0; u.pitch=1.05; u.volume=1.0;
+    if(onEnd){                          // 음성이 끝나면 콜백 (onend 미발동 브라우저 대비 안전 타이머)
+      u.onend=finish; u.onerror=finish;
+      setTimeout(finish, 2200 + text.length*170);
+    }
+    speechSynthesis.speak(u);
+  }catch(e){ if(onEnd) setTimeout(finish, 1500 + text.length*95); }
+}
+
+/* ===================== 효과음 ===================== */
+const AudioCtx=window.AudioContext||window.webkitAudioContext;
+let audioCtx=null;
+const getAudio=()=>audioCtx||(audioCtx=new AudioCtx());
+function playBoing(){
+  const ac=getAudio();
+  [0,.12].forEach((d,i)=>{
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type='sine';
+    const f=i===0?520:680;
+    o.frequency.setValueAtTime(f,ac.currentTime+d);
+    o.frequency.exponentialRampToValueAtTime(f*.6,ac.currentTime+d+.15);
+    g.gain.setValueAtTime(.3,ac.currentTime+d);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.18);
+    o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.2);
+  });
+}
+function playDing(){
+  const ac=getAudio();
+  [{f:880,d:0},{f:1046,d:.16},{f:784,d:.32},{f:1174,d:.48}].forEach(({f,d})=>{
+    const o=ac.createOscillator(),g=ac.createGain();
+    o.connect(g);g.connect(ac.destination);o.type='triangle';
+    o.frequency.setValueAtTime(f,ac.currentTime+d);
+    g.gain.setValueAtTime(.35,ac.currentTime+d);
+    g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.22);
+    o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.25);
+  });
+}
+
+/* ===================== 토스트 ===================== */
+let toastTimer=null;
+function showToast(msg,duration=0,pulse=false){
+  const el=document.getElementById('toast');
+  el.textContent=msg;
+  if(toastTimer){clearTimeout(toastTimer);toastTimer=null;}
+  if(pulse&&el.classList.contains('show')){
+    el.classList.remove('pulse');void el.offsetWidth;el.classList.add('pulse');
+  }else{
+    el.classList.add('show');
+    if(pulse){void el.offsetWidth;el.classList.add('pulse');}
+  }
+  if(duration>0)toastTimer=setTimeout(()=>{el.classList.remove('show','pulse');},duration);
+}
+function hideToast(){
+  const el=document.getElementById('toast');
+  if(toastTimer){clearTimeout(toastTimer);toastTimer=null;}
+  el.classList.remove('show','pulse');
+}
+
+/* ===================== 배경 눈 ===================== */
+const snowCanvas=document.getElementById('snowCanvas');
+const sctx=snowCanvas.getContext('2d');
+let flakes=[];
+function initSnow(){
+  snowCanvas.width=1000;snowCanvas.height=600;
+  flakes=Array.from({length:60},()=>({x:Math.random()*1000,y:Math.random()*600,r:Math.random()*2+1,s:Math.random()*.4+.2}));
+}
+function drawSnow(){
+  sctx.clearRect(0,0,1000,600);sctx.fillStyle='white';
+  flakes.forEach(f=>{sctx.beginPath();sctx.arc(f.x,f.y,f.r,0,7);sctx.fill();f.y+=f.s;if(f.y>600)f.y=-10;});
+  requestAnimationFrame(drawSnow);
+}
+
+/* ===================== 공통 그림: 룩(방어탑) ===================== */
+function drawRook(x,y,fill='#1e293b'){
+  ctx.save();ctx.translate(x,y);
+  ctx.fillStyle=fill;ctx.strokeStyle='#38bdf8';ctx.lineWidth=2;
+  const w=24;
+  ctx.beginPath();ctx.rect(-w/2,12,w,8);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-w/2+4,12);ctx.lineTo(-w/2+7,-10);ctx.lineTo(w/2-7,-10);ctx.lineTo(w/2-4,12);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.rect(-w/2+2,-18,w-4,8);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#082f49';ctx.fillRect(-2,-18,4,3);
+  ctx.restore();
+}
+function drawSnowman(m){
+  if(m.alpha<=0)return;
+  ctx.save();ctx.globalAlpha=m.alpha;
+  const b=Math.sin(Date.now()/400+m.phase)*4;
+  ctx.translate(m.x,m.y+b);
+  ctx.beginPath();ctx.arc(0,7,m.size*.7,0,7);ctx.fillStyle='white';ctx.fill();
+  ctx.beginPath();ctx.arc(0,-7,m.size*.5,0,7);ctx.fill();
+  ctx.fillStyle='#334155';
+  ctx.beginPath();ctx.arc(-3.5,-8,1.5,0,7);ctx.fill();
+  ctx.beginPath();ctx.arc(3.5,-8,1.5,0,7);ctx.fill();
+  ctx.fillStyle='#fb923c';ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(5,-6);ctx.lineTo(0,-4);ctx.fill();
+  ctx.restore();ctx.globalAlpha=1;
+}
+function spawnParticles(x,y,n=22){
+  for(let i=0;i<n;i++)particles.push({
+    x,y,vx:(Math.random()-.5)*6,vy:(Math.random()-.5)*6,
+    life:1,size:Math.random()*3+2,color:Math.random()>.5?'#bae6fd':'#fff'
+  });
+}
+function drawParticles(){
+  particles.forEach((p,i)=>{
+    p.x+=p.vx;p.y+=p.vy;p.life-=.012;
+    if(p.life<=0){particles.splice(i,1);return;}
+    ctx.globalAlpha=p.life;ctx.fillStyle=p.color;
+    ctx.beginPath();ctx.arc(p.x,p.y,p.size,0,7);ctx.fill();ctx.globalAlpha=1;
+  });
+}
+
+/* ===================== 기하 helper ===================== */
+function circumcenter(a,b,c){
+  const d=2*(a.x*(b.y-c.y)+b.x*(c.y-a.y)+c.x*(a.y-b.y));
+  if(Math.abs(d)<1e-6)return null;
+  const ux=((a.x**2+a.y**2)*(b.y-c.y)+(b.x**2+b.y**2)*(c.y-a.y)+(c.x**2+c.y**2)*(a.y-b.y))/d;
+  const uy=((a.x**2+a.y**2)*(c.x-b.x)+(b.x**2+b.y**2)*(a.x-c.x)+(c.x**2+c.y**2)*(b.x-a.x))/d;
+  return{x:ux,y:uy};
+}
+function incenterOf(A,B,C){
+  const a=dist(B.x,B.y,C.x,C.y),b=dist(A.x,A.y,C.x,C.y),c=dist(A.x,A.y,B.x,B.y);
+  const p=a+b+c;
+  const I={x:(a*A.x+b*B.x+c*C.x)/p,y:(a*A.y+b*B.y+c*C.y)/p};
+  const area=Math.abs((B.x-A.x)*(C.y-A.y)-(C.x-A.x)*(B.y-A.y))/2;
+  return{I,r:area/(p/2)};
+}
+function distToLine(px,py,a,b){
+  const dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy);
+  return Math.abs((px-a.x)*dy-(py-a.y)*dx)/L;
+}
+function footOnLine(px,py,a,b){ // 점에서 직선 ab에 내린 수선의 발
+  const dx=b.x-a.x,dy=b.y-a.y,L2=dx*dx+dy*dy;
+  const t=((px-a.x)*dx+(py-a.y)*dy)/L2;
+  return{x:a.x+t*dx,y:a.y+t*dy};
+}
+function distToSeg(p,a,b){
+  const l2=(a.x-b.x)**2+(a.y-b.y)**2;
+  if(l2===0)return dist(p.x,p.y,a.x,a.y);
+  let t=((p.x-a.x)*(b.x-a.x)+(p.y-a.y)*(b.y-a.y))/l2;t=Math.max(0,Math.min(1,t));
+  return dist(p.x,p.y,a.x+t*(b.x-a.x),a.y+t*(b.y-a.y));
+}
+function pointInTri(p,A,B,C){
+  const s=(u,v,w)=>(u.x-w.x)*(v.y-w.y)-(v.x-w.x)*(u.y-w.y);
+  const d1=s(p,A,B),d2=s(p,B,C),d3=s(p,C,A);
+  const neg=d1<0||d2<0||d3<0,pos=d1>0||d2>0||d3>0;
+  return !(neg&&pos);
+}
+function convexHullIds(pts){
+  const p=[...pts].sort((a,b)=>a.x-b.x||a.y-b.y);
+  const cross=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+  const lo=[],up=[];
+  for(const pt of p){while(lo.length>=2&&cross(lo[lo.length-2],lo[lo.length-1],pt)<=0)lo.pop();lo.push(pt);}
+  for(let i=p.length-1;i>=0;i--){const pt=p[i];while(up.length>=2&&cross(up[up.length-2],up[up.length-1],pt)<=0)up.pop();up.push(pt);}
+  lo.pop();up.pop();
+  return new Set(lo.concat(up).map(pt=>pt.id));
+}
+
+/* ==================================================================
+   PHASE 1 : 보로노이 방어선
+   ================================================================== */
+let towers=[],edges=[],triangles=[],monsters=[],hullIds=new Set(),cellsById={};
+let voronoiDone=false;
+
+function startVoronoi(){
+  getAudio();               // 사용자 제스처에서 오디오 컨텍스트 활성화
+  phase='voronoi';
+  showScreen('game');
+  document.getElementById('topbanner').style.display='none';
+  document.getElementById('actionBtn').style.display='none';
+  document.getElementById('nextPopup').classList.remove('active');
+  setTitle('GEOMETRIC DEFENSE');
+  initVoronoi();
+}
+
+function initVoronoi(){
+  canvas.width=1000;canvas.height=600;
+  towers=[];edges=[];triangles=[];monsters=[];particles=[];cellsById={};voronoiDone=false;
+
+  // 방어탑: 결정적 배치(경계 7 + 내부 3)
+  const layout=[
+    [160,120],[500,90],[840,120],[880,320],[700,500],[320,510],[120,330], // 경계
+    [430,260],[650,300],[500,410] // 내부(bounded cell)
+  ];
+  layout.forEach((p,i)=>towers.push({id:i,x:p[0],y:p[1]}));
+  hullIds=convexHullIds(towers);
+
+  // Delaunay 삼각형(외심이 화면 안)
+  for(let i=0;i<towers.length;i++)for(let j=i+1;j<towers.length;j++)for(let k=j+1;k<towers.length;k++){
+    const cc=circumcenter(towers[i],towers[j],towers[k]);
+    if(cc&&cc.x>0&&cc.x<1000&&cc.y>0&&cc.y<600){
+      const r=dist(cc.x,cc.y,towers[i].x,towers[i].y);
+      let ok=true;
+      for(let m=0;m<towers.length;m++)if(m!==i&&m!==j&&m!==k)
+        if(dist(cc.x,cc.y,towers[m].x,towers[m].y)<r-5){ok=false;break;}
+      if(ok){ triangles.push({tids:[i,j,k],x:cc.x,y:cc.y,revealed:false}); addEdge(i,j);addEdge(j,k);addEdge(k,i); }
+    }
+  }
+
+  // 눈사람: 방어탑 사이 중간중간 배치 (포위 다수 + 탈출 소수)
+  const nearest=(x,y)=>{let id=-1,md=Infinity;towers.forEach(t=>{const d=dist(x,y,t.x,t.y);if(d<md){md=d;id=t.id;}});return{id,md};};
+  let surrounded=0,escaped=0,tries=0;
+  while(monsters.length<13&&tries<6000){
+    tries++;
+    const x=90+Math.random()*820, y=90+Math.random()*430;
+    const n=nearest(x,y);
+    if(n.md<48)continue;                       // 탑에 딱 붙지 않게
+    const isSurr=!hullIds.has(n.id);           // 내부셀=포위
+    if(isSurr&&surrounded>=9)continue;
+    if(!isSurr&&escaped>=4)continue;
+    monsters.push({ownerId:n.id,x,y,size:17,phase:Math.random()*7,alpha:1,
+      melting:false,fleeing:false,surrounded:isSurr,vx:0,vy:0});
+    isSurr?surrounded++:escaped++;
+  }
+
+  setProgress(`0 / ${triangles.length}`);
+  setStatus('초소 사이의 변을 눌러 수직이등분선을 작도하세요.');
+  showToast('변을 눌러 수직이등분선을 작도하세요',0);
+  if(loopId)cancelAnimationFrame(loopId);
+  loopId=requestAnimationFrame(render);
+}
+function addEdge(i,j){
+  if(!edges.some(e=>(e.t1===i&&e.t2===j)||(e.t1===j&&e.t2===i)))edges.push({t1:i,t2:j,active:false});
+}
+
+/* 활성 삼각형의 외심 셀(내부 타워) 폴리곤 구성 */
+function buildCells(){
+  cellsById={};
+  towers.forEach(t=>{
+    if(hullIds.has(t.id))return;
+    const cs=triangles.filter(tr=>tr.revealed&&tr.tids.includes(t.id)).map(tr=>({x:tr.x,y:tr.y}));
+    if(cs.length<3)return;
+    cs.sort((p,q)=>Math.atan2(p.y-t.y,p.x-t.x)-Math.atan2(q.y-t.y,q.x-t.x));
+    cellsById[t.id]=cs;
+  });
+}
+function purgeSurrounded(){
+  monsters.forEach(m=>{
+    if(m.surrounded){ m.melting=true; spawnParticles(m.x,m.y,26); }
+    else { // 경계 밖 마물은 정화되지 않고 도시 밖으로 도망
+      m.fleeing=true;
+      const ang=Math.atan2(m.y-300,m.x-500);
+      m.vx=Math.cos(ang)*4.2; m.vy=Math.sin(ang)*4.2;
+    }
+  });
+}
+
+/* --- 보로노이 클릭 --- */
+canvas.addEventListener('click',e=>{
+  if(phase==='voronoi') return onVoronoiClick(mouse(e));
+  if(phase==='problem') return curP&&curP.click(mouse(e));
+});
+function onVoronoiClick(pos){
+  if(voronoiDone)return;
+  // 외심 클릭
+  for(const tri of triangles){
+    if(tri.revealed)continue;
+    const active=edges.filter(e=>e.active&&tri.tids.includes(e.t1)&&tri.tids.includes(e.t2)).length;
+    if(active===3&&dist(pos.x,pos.y,tri.x,tri.y)<60){
+      tri.revealed=true; playDing(); speak('외심을 찾았습니다');
+      setStatus('외심 발견! 담당 구역이 그려집니다.');
+      const done=triangles.filter(t=>t.revealed).length;
+      setProgress(`${done} / ${triangles.length}`);
+      buildCells(); checkVoronoiComplete(); return;
+    }
+  }
+  // 변 클릭 → 수직이등분선
+  for(const edge of edges){
+    if(distToSeg(pos,towers[edge.t1],towers[edge.t2])<20){
+      const wasActive=edge.active; edge.active=!edge.active; playBoing();
+      if(!wasActive)speak('수직이등분선을 작도합니다');
+      updateVoronoiHint(); return;
+    }
+  }
+}
+function updateVoronoiHint(){
+  const ready=triangles.some(tri=>!tri.revealed&&
+    edges.filter(e=>e.active&&tri.tids.includes(e.t1)&&tri.tids.includes(e.t2)).length===3);
+  if(ready){ showToast('💎 반짝이는 외심을 눌러 구역을 완성하세요',0); return; }
+  const inactive=edges.filter(e=>!e.active).length;
+  if(inactive<=3&&inactive>0) showToast('⚡ 남은 변을 모두 작도하세요',0,true);
+  else showToast('변을 눌러 수직이등분선을 작도하세요',0);
+}
+function checkVoronoiComplete(){
+  if(triangles.length>0&&triangles.every(t=>t.revealed)&&!voronoiDone){
+    voronoiDone=true;
+    buildCells(); purgeSurrounded();
+    setStatus('방어선 완성! 포위된 마물이 정화됩니다.');
+    speak('보로노이 방어선이 완성되었습니다. 포위된 마물을 정화합니다.');
+    showToast('✨ 포위된 마물 정화 완료!',2600);
+    setTimeout(()=>document.getElementById('nextPopup').classList.add('active'),2600);
+  }
+}
+
+/* --- 보로노이 렌더 --- */
+function renderVoronoi(){
+  ctx.clearRect(0,0,1000,600);
+  drawParticles();
+
+  // 완성된 셀(포위 구역) 채우기
+  Object.values(cellsById).forEach(poly=>{
+    ctx.beginPath();ctx.moveTo(poly[0].x,poly[0].y);
+    for(let i=1;i<poly.length;i++)ctx.lineTo(poly[i].x,poly[i].y);
+    ctx.closePath();
+    ctx.fillStyle='rgba(56,189,248,0.14)';ctx.fill();
+    ctx.strokeStyle='rgba(56,189,248,0.55)';ctx.lineWidth=2;ctx.stroke();
+  });
+
+  // 눈사람 이동/정화
+  monsters.forEach(m=>{
+    if(m.melting){ m.alpha-=.012; m.size+=.1; }
+    else if(m.fleeing){ m.x+=m.vx;m.y+=m.vy; if(m.x<-40||m.x>1040||m.y<-40||m.y>640)m.alpha-=.05; }
+    else { m.x+=Math.sin(Date.now()/900+m.phase)*.25; m.y+=Math.cos(Date.now()/1100+m.phase)*.2; }
+    drawSnowman(m);
+  });
+
+  // 변 + 작도된 수직이등분선
+  edges.forEach((e,idx)=>{
+    const t1=towers[e.t1],t2=towers[e.t2];
+    ctx.beginPath();ctx.moveTo(t1.x,t1.y);ctx.lineTo(t2.x,t2.y);
+    ctx.strokeStyle=e.active?'rgba(56,189,248,0.7)':'rgba(255,255,255,0.35)';
+    ctx.lineWidth=e.active?3:1;ctx.stroke();
+    if(e.active){
+      drawBisectorMarks(t1,t2,idx);
+      const mx=(t1.x+t2.x)/2,my=(t1.y+t2.y)/2,dx=t2.x-t1.x,dy=t2.y-t1.y;
+      ctx.save();ctx.beginPath();
+      ctx.moveTo(mx-dy*100,my+dx*100);ctx.lineTo(mx+dy*100,my-dx*100);
+      ctx.strokeStyle='rgba(186,230,253,0.3)';ctx.setLineDash([8,8]);ctx.stroke();ctx.restore();
+    }
+  });
+
+  // 외심 보석 + 결계
+  triangles.forEach(tri=>{
+    const active=edges.filter(e=>e.active&&tri.tids.includes(e.t1)&&tri.tids.includes(e.t2)).length;
+    if(tri.revealed){
+      // 인접 외심 연결(보로노이 간선)
+      triangles.forEach(o=>{
+        if(o.revealed&&o!==tri){
+          const common=tri.tids.filter(id=>o.tids.includes(id));
+          if(common.length===2){ ctx.beginPath();ctx.moveTo(tri.x,tri.y);ctx.lineTo(o.x,o.y);
+            ctx.strokeStyle='#38bdf8';ctx.lineWidth=5;ctx.stroke(); }
         }
-
-        const getDist = (x1, y1, x2, y2) => Math.sqrt((x1-x2)**2 + (y1-y2)**2);
-
-        function showScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(`screen-${id}`).classList.add('active');
-            gameState = id.toUpperCase();
-            if (id === 'game') initGame();
+      });
+      // 바깥으로 뻗는 무한 결계
+      const cx=(towers[tri.tids[0]].x+towers[tri.tids[1]].x+towers[tri.tids[2]].x)/3;
+      const cy=(towers[tri.tids[0]].y+towers[tri.tids[1]].y+towers[tri.tids[2]].y)/3;
+      [[tri.tids[0],tri.tids[1]],[tri.tids[1],tri.tids[2]],[tri.tids[2],tri.tids[0]]].forEach(tp=>{
+        const shared=triangles.some(o=>o!==tri&&o.revealed&&tp.every(id=>o.tids.includes(id)));
+        if(!shared){
+          const a=towers[tp[0]],b=towers[tp[1]];
+          const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+          let rx=-(b.y-a.y),ry=(b.x-a.x);
+          if(rx*(mx-cx)+ry*(my-cy)<0){rx=-rx;ry=-ry;}
+          const len=3000/Math.hypot(rx,ry);
+          ctx.beginPath();ctx.moveTo(tri.x,tri.y);ctx.lineTo(tri.x+rx*len,tri.y+ry*len);
+          ctx.strokeStyle='rgba(251,146,60,0.85)';ctx.lineWidth=4;ctx.stroke();
         }
+      });
+      ctx.beginPath();ctx.arc(tri.x,tri.y,9,0,7);
+      ctx.fillStyle='#bae6fd';ctx.shadowBlur=22;ctx.shadowColor='#38bdf8';ctx.fill();ctx.shadowBlur=0;
+    } else if(active===3){
+      const pulse=22+Math.sin(Date.now()/100)*11;
+      ctx.beginPath();ctx.arc(tri.x,tri.y,pulse,0,7);
+      ctx.fillStyle='rgba(255,255,255,0.4)';ctx.fill();
+      ctx.strokeStyle='rgba(56,189,248,0.9)';ctx.lineWidth=3;ctx.stroke();
+    }
+  });
 
-        // --- 눈 배경 ---
-        const snowCanvas = document.getElementById('snowCanvas');
-        const sctx = snowCanvas.getContext('2d');
-        let snowflakes = [];
-        function initSnow() {
-            snowCanvas.width = 1000; snowCanvas.height = 600;
-            snowflakes = Array.from({length: 60}, () => ({
-                x: Math.random() * 1000, y: Math.random() * 600, r: Math.random() * 2 + 1, s: Math.random() * 0.4 + 0.2
-            }));
+  towers.forEach(t=>drawRook(t.x,t.y));
+}
+/* 변마다 수직·이등분 표시 */
+const MARKS=['circle','triangle','square','diamond','cross','hash'];
+function drawBisectorMarks(t1,t2,idx){
+  const mx=(t1.x+t2.x)/2,my=(t1.y+t2.y)/2;
+  const dx=t2.x-t1.x,dy=t2.y-t1.y,L=Math.hypot(dx,dy);
+  const ux=dx/L,uy=dy/L,px=-uy,py=ux;
+  ctx.save();ctx.strokeStyle='#38bdf8';ctx.fillStyle='#38bdf8';ctx.lineWidth=2;
+  const sq=8;
+  ctx.beginPath();
+  ctx.moveTo(mx+px*sq*.5-ux*sq*.5,my+py*sq*.5-uy*sq*.5);
+  ctx.lineTo(mx+px*sq*.5+ux*sq*.5,my+py*sq*.5+uy*sq*.5);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(mx+ux*sq*.5,my+uy*sq*.5);
+  ctx.lineTo(mx+px*sq*.5+ux*sq*.5,my+py*sq*.5+uy*sq*.5);ctx.stroke();
+  const type=MARKS[idx%MARKS.length];
+  [-16,16].forEach(off=>{
+    const bx=mx+ux*off,by=my+uy*off,r=5;ctx.beginPath();
+    switch(type){
+      case 'circle':ctx.arc(bx,by,r,0,7);ctx.stroke();break;
+      case 'triangle':ctx.moveTo(bx,by-r);ctx.lineTo(bx+r*.87,by+r*.5);ctx.lineTo(bx-r*.87,by+r*.5);ctx.closePath();ctx.stroke();break;
+      case 'square':ctx.rect(bx-r*.8,by-r*.8,r*1.6,r*1.6);ctx.stroke();break;
+      case 'diamond':ctx.moveTo(bx,by-r);ctx.lineTo(bx+r*.7,by);ctx.lineTo(bx,by+r);ctx.lineTo(bx-r*.7,by);ctx.closePath();ctx.stroke();break;
+      case 'cross':ctx.moveTo(bx-r,by);ctx.lineTo(bx+r,by);ctx.moveTo(bx,by-r);ctx.lineTo(bx,by+r);ctx.stroke();break;
+      case 'hash':ctx.moveTo(bx-r*.4,by-r);ctx.lineTo(bx-r*.4,by+r);ctx.moveTo(bx+r*.4,by-r);ctx.lineTo(bx+r*.4,by+r);ctx.moveTo(bx-r,by-r*.3);ctx.lineTo(bx+r,by-r*.3);ctx.moveTo(bx-r,by+r*.3);ctx.lineTo(bx+r,by+r*.3);ctx.stroke();break;
+    }
+  });
+  ctx.restore();
+}
+
+/* ==================================================================
+   PHASE 2 : 세 개의 의뢰(문제)
+   ================================================================== */
+let curP=null, problemIndex=0;
+
+function startProblems(){
+  document.getElementById('nextPopup').classList.remove('active');
+  phase='problem'; problemIndex=0; hideChoice();
+  document.getElementById('topbanner').style.display='block';
+  hideToast();
+  loadProblem(0);
+}
+function loadProblem(i){
+  problemIndex=i;
+  curP = [makeP1,makeP2,makeP3][i]();
+  setTitle('의뢰 '+(i+1)+' / 3');
+  setProgress((i)+' / 3 해결');
+  document.getElementById('actionBtn').style.display='none';
+  hideToast();
+  const tb=document.getElementById('topbanner');
+  tb.querySelector('.tag').innerText=curP.tag;
+  tb.querySelector('.msg').innerText=curP.question;
+  setStatus('먼저 작도 방법을 선택하세요.');
+  curP.init();
+  showChoice();
+}
+function showChoice(){ document.getElementById('choicePanel').style.display='flex'; }
+function hideChoice(){ document.getElementById('choicePanel').style.display='none'; }
+function chooseMethod(m){ if(curP&&curP.setMode) curP.setMode(m); }
+function showActionButton(label,fn){
+  const b=document.getElementById('actionBtn');
+  b.innerText=label; b.style.display='block';
+  b.onclick=()=>{ b.style.display='none'; fn(); };
+}
+function nextProblemOrWin(){
+  if(problemIndex<2){
+    // 문제 사이 스토리
+    const beats=[
+      {emoji:'🅿️',title:'평화로운 마을의 두 번째 고민',
+       text:'우물 다툼이 끝나자, 마을은 마차 주차장을 새로 짓기로 했다.<br>세 갈래 <span class="text-orange-300">도로에서 똑같이 가까운</span> 자리를 찾아야 한다.',
+       btn:'두 번째 의뢰 받기 ▶',go:()=>loadProblem(1)},
+      {emoji:'🐐',title:'마지막 부탁, 염소 우리',
+       text:'삼각형 울타리 안에 염소를 묶을 막대를 세운다.<br>울타리 밖으로 나가지 않으면서 <span class="text-orange-300">가장 넓게</span> 풀을 뜯게 하려면?',
+       btn:'마지막 의뢰 받기 ▶',go:()=>loadProblem(2)}
+    ][problemIndex];
+    const pop=document.getElementById('storyPopup');
+    document.getElementById('story-emoji').innerText=beats.emoji;
+    document.getElementById('story-title').innerHTML=beats.title;
+    document.getElementById('story-text').innerHTML=beats.text;
+    const sb=document.getElementById('story-btn'); sb.innerText=beats.btn;
+    sb.onclick=()=>{ pop.classList.remove('active'); beats.go(); };
+    pop.classList.add('active');
+  } else {
+    setProgress('3 / 3 해결');
+    setTimeout(()=>document.getElementById('victoryModal').classList.add('active'),700);
+  }
+}
+
+/* ---------- 공용: 마을집 / 도로 / 표식 ---------- */
+function drawHouse(x,y,color='#38bdf8',label=''){
+  ctx.save();ctx.translate(x,y);
+  ctx.fillStyle=color;ctx.strokeStyle='#e0f2fe';ctx.lineWidth=2;
+  ctx.beginPath();ctx.rect(-14,-2,28,20);ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-18,-2);ctx.lineTo(0,-20);ctx.lineTo(18,-2);ctx.closePath();ctx.fill();ctx.stroke();
+  ctx.fillStyle='#082f49';ctx.fillRect(-5,6,10,12);
+  ctx.restore();
+  if(label){ctx.save();ctx.fillStyle='#fff';ctx.font='bold 20px Jua';ctx.textAlign='center';
+    ctx.fillText(label,x,y-28);ctx.restore();}
+}
+function drawEqualTick(x,y,ang){ // 등거리 '='
+  ctx.save();ctx.translate(x,y);ctx.rotate(ang);
+  ctx.strokeStyle='#fde047';ctx.lineWidth=3;
+  ctx.beginPath();ctx.moveTo(-6,-3);ctx.lineTo(6,-3);ctx.moveTo(-6,3);ctx.lineTo(6,3);ctx.stroke();
+  ctx.restore();
+}
+function drawRightAngle(foot,I,along){ // 수선의 발 직각표시
+  const ux=(I.x-foot.x),uy=(I.y-foot.y),Lu=Math.hypot(ux,uy)||1;
+  const vx=along.x,vy=along.y,Lv=Math.hypot(vx,vy)||1;
+  const s=9;
+  const p1={x:foot.x+ux/Lu*s,y:foot.y+uy/Lu*s};
+  const p2={x:foot.x+vx/Lv*s,y:foot.y+vy/Lv*s};
+  const p3={x:foot.x+ux/Lu*s+vx/Lv*s,y:foot.y+uy/Lu*s+vy/Lv*s};
+  ctx.save();ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p3.x,p3.y);ctx.lineTo(p2.x,p2.y);ctx.stroke();ctx.restore();
+}
+
+/* ==================================================================
+   PHASE 2 문제 공통 팩토리
+   작도법(수직이등분선/각의 이등분선)을 학생이 선택 → 심 배치 →
+   시나리오(꼭짓점 등거리=외심 / 변 등거리=내심)에 맞는지 검증 → 틀리면 반려
+   ================================================================== */
+function makeProblem(cfg){
+  const A=cfg.A,B=cfg.B,C=cfg.C;
+  const cc=circumcenter(A,B,C), R=dist(cc.x,cc.y,A.x,A.y);
+  const inc=incenterOf(A,B,C), ic=inc.I, r=inc.r;
+  const geo={cc:cc,R:R,ic:ic,r:r};
+  const sides=[{a:A,b:B},{a:B,b:C},{a:C,b:A}];
+  const verts=[A,B,C];
+  let mode=null;                  // 'perp' | 'angle'
+  let sd=[false,false,false];     // 수직이등분선 작도
+  let vd=[false,false,false];     // 각의 이등분선 작도
+  let success=false, rejecting=false, wrongPt=null, wrongType=null;
+  let glow=0, t=0;
+
+  function reset(){ mode=null; sd=[false,false,false]; vd=[false,false,false];
+    rejecting=false; wrongPt=null; wrongType=null; }
+  function nDone(){ return (mode==='perp'?sd:vd).filter(Boolean).length; }
+  function activeCenter(){ return mode==='perp'?cc:ic; }
+
+  function place(chosen){          // chosen: 'circ' | 'in'
+    const pt = chosen==='circ'?cc:ic;
+    const label = chosen==='circ'?'외심':'내심';
+    if(chosen===cfg.correct){
+      success=true; hideChoice(); playDing();
+      speak(label+'의 위치에 '+cfg.obj+' 만듭니다. '+cfg.okVoice);
+      setStatus(cfg.okStatus);
+      setProgress((problemIndex+1)+' / 3 해결');
+      spawnParticles(pt.x,pt.y,26);
+      showActionButton(cfg.btn, nextProblemOrWin);
+    }else{
+      rejecting=true; wrongPt=pt; wrongType=chosen; playBoing();
+      setStatus(cfg.badStatus);
+      showToast(cfg.badToast,0,true);          // 음성 끝날 때까지 계속 표시
+      speak(label+'의 위치에 '+cfg.obj+' 만듭니다. '+cfg.badVoice, function(){
+        if(success)return;
+        reset(); setStatus('작도 방법을 다시 선택하세요.');
+        hideToast(); showChoice();
+      });
+    }
+  }
+
+  function pulse(p,color,pr,solid){
+    ctx.beginPath();ctx.arc(p.x,p.y,pr,0,7);
+    ctx.fillStyle=solid?color:'rgba(255,255,255,.5)';
+    ctx.shadowBlur=20;ctx.shadowColor=color;ctx.fill();ctx.shadowBlur=0;
+  }
+  function drawRefLines(P,equal){
+    const col = equal?'rgba(253,224,71,.9)':'rgba(248,113,113,.95)';
+    if(cfg.refType==='points'){
+      [A,B,C].forEach(function(V){
+        ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.lineTo(V.x,V.y);
+        ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke();
+        if(equal)drawEqualTick((P.x+V.x)/2,(P.y+V.y)/2,Math.atan2(V.y-P.y,V.x-P.x));
+      });
+    }else{
+      [[A,B],[B,C],[C,A]].forEach(function(pr){
+        const f=footOnLine(P.x,P.y,pr[0],pr[1]);
+        ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.lineTo(f.x,f.y);
+        ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.stroke();
+        if(equal)drawEqualTick((P.x+f.x)/2,(P.y+f.y)/2,Math.atan2(f.y-P.y,f.x-P.x));
+      });
+    }
+  }
+
+  return {
+    tag:cfg.tag, question:cfg.question,
+    init(){},
+    setMode(m){
+      if(success||rejecting)return;
+      mode=m; hideChoice();
+      setStatus(m==='perp'
+        ? '각 변을 눌러 수직이등분선을 작도하세요.'
+        : '각 꼭짓점을 눌러 각의 이등분선을 작도하세요.');
+    },
+    click(pos){
+      if(success||rejecting)return;
+      if(!mode){ showToast('먼저 작도 방법을 선택하세요',1600); return; }
+      if(nDone()>=2){
+        const pc=activeCenter();
+        if(dist(pos.x,pos.y,pc.x,pc.y)<44){ place(mode==='perp'?'circ':'in'); return; }
+      }
+      if(mode==='perp'){
+        for(let i=0;i<3;i++){
+          if(!sd[i] && distToSeg(pos,sides[i].a,sides[i].b)<20){
+            sd[i]=true; playBoing(); speak('수직이등분선을 작도합니다');
+            setStatus(sd.filter(Boolean).length>=2?'반짝이는 외심을 눌러 자리를 정하세요.':'나머지 변도 수직이등분선을 그어보세요.');
+            return;
+          }
         }
-        function drawSnow() {
-            sctx.clearRect(0,0,1000,600);
-            sctx.fillStyle = "white";
-            snowflakes.forEach(f => {
-                sctx.beginPath(); sctx.arc(f.x, f.y, f.r, 0, Math.PI*2); sctx.fill();
-                f.y += f.s; if(f.y > 600) f.y = -10;
-            });
-            requestAnimationFrame(drawSnow);
+      }else{
+        for(let i=0;i<3;i++){
+          if(!vd[i] && dist(pos.x,pos.y,verts[i].x,verts[i].y)<40){
+            vd[i]=true; playBoing(); speak('각의 이등분선을 작도합니다');
+            setStatus(vd.filter(Boolean).length>=2?'반짝이는 내심을 눌러 자리를 정하세요.':'다른 각의 이등분선도 그어보세요.');
+            return;
+          }
         }
+      }
+    },
+    draw(){
+      ctx.clearRect(0,0,1000,600); drawParticles(); glow+=.08; t+=.05;
+      cfg.drawBase(geo,mode);
 
-        // --- 게임 엔진 ---
-        function initGame() {
-            canvas.width = 1000; canvas.height = 600;
-            towers = []; edges = []; triangles = []; monsters = []; particles = [];
-            isGameOver = false;
-            
-            // 육각형 격자 타워 배치
-            const rows = 3; const cols = 4; const spacingX = 220; const spacingY = 180;
-            const offsetX = 180; const offsetY = 140;
-
-            let count = 0;
-            for(let r=0; r<rows; r++) {
-                for(let c=0; c<cols; c++) {
-                    if(count >= 10) break;
-                    let x = offsetX + c * spacingX + (r % 2 === 1 ? spacingX / 2 : 0);
-                    let y = offsetY + r * spacingY;
-                    x += (Math.random() - 0.5) * 50; y += (Math.random() - 0.5) * 50;
-                    towers.push({ id: count++, x, y });
-                }
-            }
-
-            // 삼각형 생성 (Delaunay)
-            for (let i = 0; i < towers.length; i++) {
-                for (let j = i + 1; j < towers.length; j++) {
-                    for (let k = j + 1; k < towers.length; k++) {
-                        const t1 = towers[i], t2 = towers[j], t3 = towers[k];
-                        const cc = getCircumcenter(t1, t2, t3);
-                        if (cc && cc.x > 0 && cc.x < 1000 && cc.y > 0 && cc.y < 600) {
-                            const radius = getDist(cc.x, cc.y, t1.x, t1.y);
-                            let isDelaunay = true;
-                            for (let m = 0; m < towers.length; m++) {
-                                if (m !== i && m !== j && m !== k) {
-                                    if (getDist(cc.x, cc.y, towers[m].x, towers[m].y) < radius - 5) {
-                                        isDelaunay = false; break;
-                                    }
-                                }
-                            }
-                            if (isDelaunay) {
-                                triangles.push({ tids: [i, j, k], x: cc.x, y: cc.y, revealed: false });
-                                addEdge(i, j); addEdge(j, k); addEdge(k, i);
-                            }
-                        }
-                    }
-                }
-            }
-
-            towers.forEach(t => {
-                monsters.push({
-                    ownerId: t.id, x: t.x + (Math.random()-0.5)*40, y: t.y + (Math.random()-0.5)*40,
-                    size: 18, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5, 
-                    phase: Math.random()*Math.PI*2, alpha: 1.0, melting: false
-                });
-            });
-
-            updateUI();
-            gameLoopId = requestAnimationFrame(render);
+      if(mode==='perp'){
+        for(let i=0;i<3;i++){ if(!sd[i])continue;
+          const s=sides[i], mx=(s.a.x+s.b.x)/2,my=(s.a.y+s.b.y)/2,dx=s.b.x-s.a.x,dy=s.b.y-s.a.y;
+          ctx.beginPath();ctx.moveTo(mx-dy*3,my+dx*3);ctx.lineTo(mx+dy*3,my-dx*3);
+          ctx.strokeStyle='rgba(56,189,248,.75)';ctx.lineWidth=2.5;ctx.stroke();
+          const uL=Math.hypot(dx,dy)||1;drawRightAngle({x:mx,y:my},{x:mx-dy,y:my+dx},{x:dx/uL,y:dy/uL});
         }
-
-        function addEdge(i, j) {
-            if (!edges.some(e => (e.t1 === i && e.t2 === j) || (e.t1 === j && e.t2 === i))) {
-                edges.push({ t1: i, t2: j, active: false });
-            }
+      }
+      if(mode==='angle'){
+        for(let i=0;i<3;i++){ if(!vd[i])continue;
+          const v=verts[i];
+          ctx.beginPath();ctx.moveTo(v.x,v.y);
+          ctx.lineTo(v.x+(ic.x-v.x)*2.4, v.y+(ic.y-v.y)*2.4);
+          ctx.strokeStyle='rgba(251,146,60,.8)';ctx.lineWidth=2.5;ctx.stroke();
         }
+      }
 
-        function getCircumcenter(a, b, c) {
-            const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
-            if (Math.abs(d) < 10) return null;
-            const ux = ((a.x**2 + a.y**2) * (b.y - c.y) + (b.x**2 + b.y**2) * (c.y - a.y) + (c.x**2 + c.y**2) * (a.y - b.y)) / d;
-            const uy = ((a.x**2 + a.y**2) * (c.x - b.x) + (b.x**2 + b.y**2) * (a.x - c.x) + (c.x**2 + c.y**2) * (b.x - a.x)) / d;
-            return { x: ux, y: uy };
+      if(rejecting && wrongPt){
+        if(cfg.drawReject){ cfg.drawReject(wrongPt,wrongType,t,geo); }
+        else {
+          drawRefLines(wrongPt,false);
+          pulse(wrongPt, wrongType==='circ'?'#38bdf8':'#fb923c', 10, true);
+          ctx.fillStyle='#fca5a5';ctx.font='bold 34px Jua';ctx.textAlign='center';
+          ctx.fillText('≠', wrongPt.x, wrongPt.y-26);
+          cfg.drawObject(wrongPt,false,t,geo);
         }
+      }
 
-        canvas.onclick = (e) => {
-            if (isGameOver || gameState !== 'GAME') return;
-            const pos = getMousePos(e);
-
-            for (let tri of triangles) {
-                if (!tri.revealed) {
-                    const activeCount = edges.filter(e => e.active && tri.tids.includes(e.t1) && tri.tids.includes(e.t2)).length;
-                    if (activeCount === 3 && getDist(pos.x, pos.y, tri.x, tri.y) < 60) {
-                        tri.revealed = true;
-                        purifyArea(tri);
-                        document.getElementById('ui-status').innerText = "외심 보석 활성화! 구역이 정화됩니다.";
-                        updateUI();
-                        checkVictory();
-                        return;
-                    }
-                }
-            }
-
-            for (let edge of edges) {
-                const t1 = towers[edge.t1], t2 = towers[edge.t2];
-                if (distToSegment(pos, t1, t2) < 20) {
-                    edge.active = !edge.active;
-                    return;
-                }
-            }
-        };
-
-        function distToSegment(p, a, b) {
-            const l2 = (a.x - b.x)**2 + (a.y - b.y)**2;
-            if (l2 === 0) return getDist(p.x, p.y, a.x, a.y);
-            let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / l2;
-            t = Math.max(0, Math.min(1, t));
-            return getDist(p.x, p.y, a.x + t * (b.x - a.x), a.y + t * (b.y - a.y));
+      if(success){
+        const P = cfg.correct==='circ'?cc:ic;
+        if(cfg.correct==='circ'){
+          ctx.beginPath();ctx.arc(cc.x,cc.y,R,0,7);
+          ctx.strokeStyle='rgba(251,146,60,.85)';ctx.lineWidth=3;ctx.stroke();
+        }else{
+          ctx.beginPath();ctx.arc(ic.x,ic.y,r,0,7);
+          ctx.fillStyle='rgba(74,222,128,.14)';ctx.fill();
+          ctx.strokeStyle='rgba(251,146,60,.9)';ctx.lineWidth=3;ctx.stroke();
         }
+        drawRefLines(P,true);
+        ctx.fillStyle='#fff';ctx.font='bold 22px Jua';ctx.textAlign='center';
+        ctx.fillText(cfg.correct==='circ'?'외심':'내심', P.x, P.y-(cfg.correct==='circ'?18:(r+8)));
+        cfg.drawObject(P,true,t,geo);
+      } else if(!rejecting && nDone()>=2){
+        pulse(activeCenter(), mode==='perp'?'#38bdf8':'#fb923c', 16+Math.sin(glow)*6, false);
+      }
+    }
+  };
+}
 
-        function purifyArea(tri) {
-            monsters.forEach(m => {
-                if (tri.tids.includes(m.ownerId)) {
-                    m.melting = true;
-                    for(let i=0; i<25; i++){
-                        particles.push({
-                            x: m.x, y: m.y, 
-                            vx: (Math.random()-0.5)*6, vy: (Math.random()-0.5)*6,
-                            life: 1.0, size: Math.random()*3+2,
-                            color: Math.random() > 0.5 ? "#bae6fd" : "#ffffff"
-                        });
-                    }
-                }
-            });
-        }
+/* ---------- 의뢰 1 : 공평한 우물 (정답 = 외심) ---------- */
+function makeP1(){
+  const A={x:300,y:245},B={x:720,y:270},C={x:475,y:510};
+  return makeProblem({
+    A:A,B:B,C:C, correct:'circ', refType:'points',
+    tag:'세 마을 · 공평한 우물',
+    question:'어느 위치에 우물을 만들어야 세 마을이 싸우지 않을까요?',
+    obj:'우물을', btn:'다음 문제 ▶',
+    okVoice:'세 마을에서 똑같은 거리라 아무도 싸우지 않아요. 감사합니다!',
+    okStatus:'외심 = 세 꼭짓점(마을)에서 같은 거리! 공평한 우물 완성.',
+    badVoice:'세 마을에서 같은 거리에 있지 않습니다. 마을 사람들이 싸워요. 다시 정해 주세요.',
+    badStatus:'세 마을(꼭짓점)에서 거리가 달라요. 작도 방법을 다시!',
+    badToast:'⚔️ 마을 사람들이 싸워요! 다시 정해 주세요',
+    drawBase:function(geo,mode){
+      [[A,B],[B,C],[C,A]].forEach(function(p){
+        ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[1].x,p[1].y);
+        ctx.strokeStyle='rgba(224,242,254,.35)';ctx.lineWidth=2;ctx.stroke();
+      });
+      drawHouse(A.x,A.y,'#38bdf8','마을 가');
+      drawHouse(B.x,B.y,'#818cf8','마을 나');
+      drawHouse(C.x,C.y,'#22d3ee','마을 다');
+    },
+    drawObject:function(P,ok,t,geo){
+      ctx.font='28px Jua';ctx.textAlign='center';ctx.fillText('💧',P.x,P.y+4);
+    }
+  });
+}
 
-        function updateUI() {
-            const count = triangles.filter(t => t.revealed).length;
-            document.getElementById('ui-count').innerText = `${count} / ${triangles.length}`;
-        }
+/* ---------- 의뢰 2 : 마차 주차장 (정답 = 내심) ---------- */
+function makeP2(){
+  const A={x:295,y:240},B={x:730,y:310},C={x:445,y:510};
+  return makeProblem({
+    A:A,B:B,C:C, correct:'in', refType:'lines',
+    tag:'평화로운 마을 · 마차 주차장',
+    question:'어느 위치에 마차 주차장을 지어야 세 도로에서 똑같이 가까울까요?',
+    obj:'마차 주차장을', btn:'다음 문제 ▶',
+    okVoice:'세 도로에서 똑같은 거리! 완벽한 주차장이에요.',
+    okStatus:'내심 = 세 도로(변)에서 같은 거리! 주차장 완성.',
+    badVoice:'세 도로에서 같은 거리에 있지 않습니다. 다시 정해 주세요.',
+    badStatus:'세 도로(변)에서 거리가 달라요. 작도 방법을 다시!',
+    badToast:'🚧 세 도로에서 같은 거리가 아니에요! 다시 정해 주세요',
+    drawBase:function(geo,mode){
+      [[A,B],[B,C],[C,A]].forEach(function(p){
+        ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[1].x,p[1].y);
+        ctx.strokeStyle='rgba(148,163,184,.85)';ctx.lineWidth=12;ctx.lineCap='round';ctx.stroke();
+        ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[1].x,p[1].y);
+        ctx.strokeStyle='rgba(226,232,240,.5)';ctx.lineWidth=2;ctx.setLineDash([10,10]);ctx.stroke();ctx.setLineDash([]);
+      });
+      [A,B,C].forEach(function(P){
+        ctx.beginPath();ctx.arc(P.x,P.y,7,0,7);ctx.fillStyle='#e0f2fe';ctx.fill();
+      });
+    },
+    drawObject:function(P,ok,t,geo){
+      ctx.font='26px Jua';ctx.textAlign='center';ctx.fillText('🅿️',P.x,P.y+4);
+    }
+  });
+}
 
-        function checkVictory() {
-            if (triangles.every(t => t.revealed)) {
-                isGameOver = true;
-                setTimeout(() => document.getElementById('victoryModal').classList.remove('hidden'), 2500);
-            }
-        }
+/* ---------- 의뢰 3 : 염소 우리 (정답 = 내심, 최대 내접원) ---------- */
+function makeP3(){
+  const A={x:310,y:235},B={x:765,y:310},C={x:470,y:515};
+  return makeProblem({
+    A:A,B:B,C:C, correct:'in', refType:'lines',
+    tag:'마지막 의뢰 · 염소 우리',
+    question:'막대를 어디에 세워야 울타리 밖으로 안 나가고 가장 넓게 풀을 뜯을까요?',
+    obj:'막대를', btn:'의뢰 완료 ▶',
+    okVoice:'세 변에서 똑같은 거리! 가장 큰 원이 울타리에 딱 맞아요.',
+    okStatus:'내심 = 세 변에서 같은 거리! 가장 큰 내접원 완성.',
+    badVoice:'원이 울타리 밖으로 나가 버립니다. 다시 정해 주세요.',
+    badStatus:'외심으로는 원이 울타리를 넘어요. 작도 방법을 다시!',
+    badToast:'🐐 원이 울타리 밖으로 나가요! 다시 정해 주세요',
+    drawBase:function(geo,mode){
+      ctx.save();ctx.globalAlpha=.12;
+      ctx.beginPath();ctx.moveTo(A.x,A.y);ctx.lineTo(B.x,B.y);ctx.lineTo(C.x,C.y);ctx.closePath();
+      ctx.fillStyle='#4ade80';ctx.fill();ctx.restore();
+      [[A,B],[B,C],[C,A]].forEach(function(p){
+        ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[1].x,p[1].y);
+        ctx.strokeStyle='#a16207';ctx.lineWidth=8;ctx.lineCap='round';ctx.stroke();
+        ctx.beginPath();ctx.moveTo(p[0].x,p[0].y);ctx.lineTo(p[1].x,p[1].y);
+        ctx.strokeStyle='#fde68a';ctx.lineWidth=2;ctx.setLineDash([6,10]);ctx.stroke();ctx.setLineDash([]);
+      });
+      [A,B,C].forEach(function(P){
+        ctx.beginPath();ctx.arc(P.x,P.y,7,0,7);ctx.fillStyle='#fde68a';ctx.fill();
+      });
+    },
+    drawObject:function(P,ok,t,geo){
+      const rr = ok? geo.r : 24;
+      ctx.strokeStyle='#78350f';ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(P.x,P.y+2);ctx.lineTo(P.x,P.y-16);ctx.stroke();
+      const gx=P.x+Math.cos(t)*rr*0.82, gy=P.y+Math.sin(t)*rr*0.82;
+      ctx.strokeStyle='rgba(120,53,15,.5)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(P.x,P.y-14);ctx.lineTo(gx,gy);ctx.stroke();
+      ctx.font='26px Jua';ctx.textAlign='center';ctx.fillText('🐐',gx,gy+6);
+    },
+    drawReject:function(P,wrongType,t,geo){
+      // 외심을 고르면 → 외접원: 세 꼭짓점을 지나 울타리 '밖으로' 부풀어 오른다
+      const cc=geo.cc, R=geo.R;
+      ctx.beginPath();ctx.arc(cc.x,cc.y,R,0,7);
+      ctx.fillStyle='rgba(248,113,113,.10)';ctx.fill();
+      ctx.strokeStyle='rgba(248,113,113,.9)';ctx.lineWidth=3;
+      ctx.setLineDash([10,7]);ctx.stroke();ctx.setLineDash([]);
+      // 외심 표시
+      ctx.beginPath();ctx.arc(cc.x,cc.y,9,0,7);
+      ctx.fillStyle='#38bdf8';ctx.shadowBlur=16;ctx.shadowColor='#38bdf8';ctx.fill();ctx.shadowBlur=0;
+      ctx.fillStyle='#fff';ctx.font='bold 20px Jua';ctx.textAlign='center';ctx.fillText('외심',cc.x,cc.y-16);
+      // 막대 + 울타리 밖으로 달아나는 염소
+      ctx.strokeStyle='#78350f';ctx.lineWidth=4;
+      ctx.beginPath();ctx.moveTo(cc.x,cc.y+2);ctx.lineTo(cc.x,cc.y-16);ctx.stroke();
+      const gx=cc.x+Math.cos(t)*R*0.9, gy=cc.y+Math.sin(t)*R*0.9;
+      ctx.strokeStyle='rgba(120,53,15,.55)';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(cc.x,cc.y-14);ctx.lineTo(gx,gy);ctx.stroke();
+      ctx.font='30px Jua';ctx.fillText('🐐',gx,gy+6);
+      // 경고
+      ctx.fillStyle='#fca5a5';ctx.font='bold 26px Jua';ctx.fillText('⚠ 울타리 밖으로!',cc.x,cc.y+R+22);
+    }
+  });
+}
 
-        function drawRook(x, y, color) {
-            ctx.save(); ctx.translate(x, y);
-            ctx.fillStyle = color; ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 2;
-            const w = 24;
-            ctx.beginPath(); ctx.rect(-w/2, 12, w, 8); ctx.fill(); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(-w/2+4, 12); ctx.lineTo(-w/2+7, -10); ctx.lineTo(w/2-7, -10); ctx.lineTo(w/2-4, 12); ctx.closePath(); ctx.fill(); ctx.stroke();
-            ctx.beginPath(); ctx.rect(-w/2+2, -18, w-4, 8); ctx.fill(); ctx.stroke();
-            ctx.fillStyle = "#082f49"; ctx.fillRect(-2, -18, 4, 3);
-            ctx.restore();
-        }
+/* ==================================================================
+   메인 루프 / 종료 / 재시작
+   ================================================================== */
+function render(){
+  if(phase==='voronoi') renderVoronoi();
+  else if(phase==='problem' && curP) curP.draw();
+  loopId=requestAnimationFrame(render);
+}
+function exitGame(){
+  if(confirm('게임을 종료하고 처음으로 돌아갈까요?')){
+    if(loopId){cancelAnimationFrame(loopId);loopId=null;}
+    if('speechSynthesis' in window)speechSynthesis.cancel();
+    phase='intro'; curP=null;
+    document.getElementById('nextPopup').classList.remove('active');
+    document.getElementById('storyPopup').classList.remove('active');
+    document.getElementById('victoryModal').classList.remove('active');
+    document.getElementById('actionBtn').style.display='none';
+    document.getElementById('topbanner').style.display='none';
+    hideChoice(); hideToast(); showScreen('intro');
+  }
+}
+function restartAll(){
+  document.getElementById('victoryModal').classList.remove('active');
+  document.getElementById('topbanner').style.display='none';
+  document.getElementById('actionBtn').style.display='none';
+  hideChoice(); hideToast(); startVoronoi();
+}
 
-        function render() {
-            if (gameState !== 'GAME') return;
-            ctx.clearRect(0, 0, 1000, 600);
-
-            // 1. 빛 입자 (정화 효과)
-            particles.forEach((p, index) => {
-                p.x += p.vx; p.y += p.vy; p.life -= 0.012;
-                if(p.life <= 0) { particles.splice(index, 1); return; }
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI*2); ctx.fill();
-                ctx.globalAlpha = 1.0;
-            });
-
-            // 2. 구역 채우기
-            triangles.forEach(tri => {
-                if (tri.revealed) {
-                    ctx.beginPath();
-                    ctx.moveTo(towers[tri.tids[0]].x, towers[tri.tids[0]].y);
-                    ctx.lineTo(towers[tri.tids[1]].x, towers[tri.tids[1]].y);
-                    ctx.lineTo(towers[tri.tids[2]].x, towers[tri.tids[2]].y);
-                    ctx.closePath();
-                    ctx.fillStyle = "rgba(56, 189, 248, 0.12)";
-                    ctx.fill();
-                }
-            });
-
-            // 3. 눈사람 정화 애니메이션
-            monsters.forEach((m) => {
-                if (m.melting) {
-                    m.alpha -= 0.012;
-                    m.size += 0.1; // 정화 시 살짝 커지며 흐려짐
-                } else {
-                    let nearestId = -1; let minDist = Infinity;
-                    towers.forEach(t => { let d = getDist(m.x, m.y, t.x, t.y); if(d < minDist) { minDist = d; nearestId = t.id; }});
-                    if(nearestId !== m.ownerId) {
-                        const owner = towers[m.ownerId];
-                        const angle = Math.atan2(owner.y - m.y, owner.x - m.x);
-                        m.vx += Math.cos(angle) * 0.15; m.vy += Math.sin(angle) * 0.15;
-                    } else {
-                        m.vx += (Math.random()-0.5) * 0.12; m.vy += (Math.random()-0.5) * 0.12;
-                    }
-                    m.vx *= 0.94; m.vy *= 0.94; m.x += m.vx; m.y += m.vy;
-                }
-
-                if (m.alpha > 0) {
-                    ctx.save(); ctx.globalAlpha = m.alpha;
-                    const b = Math.sin(Date.now()/400 + m.phase)*5;
-                    ctx.translate(m.x, m.y + b);
-                    ctx.beginPath(); ctx.arc(0, 7, m.size*0.7, 0, Math.PI*2); ctx.fillStyle = "white"; ctx.fill();
-                    ctx.beginPath(); ctx.arc(0, -7, m.size*0.5, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(-3.5, -8, 1.5, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(3.5, -8, 1.5, 0, Math.PI*2); ctx.fill();
-                    ctx.fillStyle = "#fb923c"; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(5, -6); ctx.lineTo(0, -4); ctx.fill();
-                    ctx.restore(); ctx.globalAlpha = 1.0;
-                }
-            });
-
-            // 4. 가이드 라인
-            edges.forEach(e => {
-                const t1 = towers[e.t1], t2 = towers[e.t2];
-                ctx.beginPath(); ctx.moveTo(t1.x, t1.y); ctx.lineTo(t2.x, t2.y);
-                ctx.strokeStyle = e.active ? "rgba(56, 189, 248, 0.7)" : "rgba(255, 255, 255, 0.35)";
-                ctx.lineWidth = e.active ? 3 : 1;
-                ctx.stroke();
-
-                if (e.active) {
-                    const mx = (t1.x + t2.x) / 2, my = (t1.y + t2.y) / 2;
-                    const dx = t2.x - t1.x, dy = t2.y - t1.y;
-                    ctx.save(); ctx.beginPath();
-                    ctx.moveTo(mx - dy * 100, my + dx * 100); ctx.lineTo(mx + dy * 100, my - dx * 100);
-                    ctx.strokeStyle = "rgba(186, 230, 253, 0.25)"; ctx.setLineDash([8, 8]); ctx.stroke(); ctx.restore();
-                }
-            });
-
-            // 5. 무한 확장 결계 (오차 수정됨)
-            triangles.forEach(tri => {
-                const activeCount = edges.filter(e => e.active && tri.tids.includes(e.t1) && tri.tids.includes(e.t2)).length;
-                if (tri.revealed) {
-                    ctx.beginPath(); ctx.arc(tri.x, tri.y, 9, 0, Math.PI*2);
-                    ctx.fillStyle = "#bae6fd"; ctx.shadowBlur = 25; ctx.shadowColor = "#38bdf8";
-                    ctx.fill(); ctx.shadowBlur = 0;
-
-                    triangles.forEach(other => {
-                        if (other.revealed && other !== tri) {
-                            const common = tri.tids.filter(id => other.tids.includes(id));
-                            if (common.length === 2) {
-                                ctx.beginPath(); ctx.moveTo(tri.x, tri.y); ctx.lineTo(other.x, other.y);
-                                ctx.strokeStyle = "#38bdf8"; ctx.lineWidth = 6; ctx.stroke();
-                            }
-                        }
-                    });
-
-                    // 화면 분할 무한 확장 (방향 보정 알고리즘 적용)
-                    const triEdges = [[tri.tids[0], tri.tids[1]], [tri.tids[1], tri.tids[2]], [tri.tids[2], tri.tids[0]]];
-                    const centroidX = (towers[tri.tids[0]].x + towers[tri.tids[1]].x + towers[tri.tids[2]].x) / 3;
-                    const centroidY = (towers[tri.tids[0]].y + towers[tri.tids[1]].y + towers[tri.tids[2]].y) / 3;
-
-                    triEdges.forEach(tp => {
-                        const isShared = triangles.some(other => other !== tri && other.revealed && tp.every(id => other.tids.includes(id)));
-                        if (!isShared) {
-                            const t1 = towers[tp[0]], t2 = towers[tp[1]];
-                            const midX = (t1.x + t2.x) / 2, midY = (t1.y + t2.y) / 2;
-                            
-                            // 광선의 기본 방향: (t2.x-t1.x, t2.y-t1.y)에 수직인 벡터
-                            let rx = -(t2.y - t1.y);
-                            let ry = (t2.x - t1.x);
-
-                            // 무게중심에서 중점을 향하는 벡터가 '바깥쪽'임
-                            const outX = midX - centroidX;
-                            const outY = midY - centroidY;
-
-                            // 수직 벡터가 바깥쪽을 향하도록 내적(dot product)으로 확인 후 반전
-                            if (rx * outX + ry * outY < 0) {
-                                rx = -rx;
-                                ry = -ry;
-                            }
-
-                            const len = 3000 / Math.sqrt(rx*rx + ry*ry);
-                            ctx.beginPath();
-                            ctx.moveTo(tri.x, tri.y);
-                            ctx.lineTo(tri.x + rx * len, tri.y + ry * len);
-                            ctx.strokeStyle = "rgba(251, 146, 60, 0.9)";
-                            ctx.lineWidth = 5;
-                            ctx.stroke();
-                            
-                            ctx.beginPath(); ctx.arc(tri.x, tri.y, 4, 0, Math.PI*2); ctx.fillStyle = "#fb923c"; ctx.fill();
-                        }
-                    });
-                } else if (activeCount === 3) {
-                    const pulse = 24 + Math.sin(Date.now()/100)*12;
-                    ctx.beginPath(); ctx.arc(tri.x, tri.y, pulse, 0, Math.PI*2);
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.4)"; ctx.fill();
-                    ctx.strokeStyle = "rgba(56, 189, 248, 0.9)"; ctx.lineWidth = 3; ctx.stroke();
-                }
-            });
-
-            towers.forEach(t => drawRook(t.x, t.y, "#1e293b"));
-            gameLoopId = requestAnimationFrame(render);
-        }
-
-        function restartGame() {
-            document.getElementById('victoryModal').classList.add('hidden');
-            if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
-            initGame();
-        }
-
-        function exitGame() {
-            if (confirm('게임을 종료하고 인트로로 돌아갈까요?')) {
-                if (gameLoopId) { cancelAnimationFrame(gameLoopId); gameLoopId = null; }
-                isGameOver = true;
-                gameState = 'INTRO';
-                document.getElementById('victoryModal').classList.add('hidden');
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.getElementById('screen-intro').classList.add('active');
-            }
-        }
-
-        window.onload = () => { initSnow(); drawSnow(); };
-    </script>
+window.onload=()=>{ initSnow(); drawSnow(); };
+</script>
 </body>
 </html>
